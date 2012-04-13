@@ -21,3 +21,12 @@ _cli_1:
 	./dcpu-cli ../programs/test-1.bin
 
 _all: _elc
+
+
+##########
+
+# git setup
+# git remote add origin git@github.com:jhgorrell/dcpu-el.git
+
+_github_push:
+	git push -u origin master

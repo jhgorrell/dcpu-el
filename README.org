@@ -17,8 +17,8 @@
 
 * Features
 
-** emulator with register, memory and breakpoints
-** assembler
+  emulator with register, memory and breakpoints
+  assembler
    
 * todo 
   command line shell
@@ -30,26 +30,28 @@
   add external sim
   other reg names (aliases)
   octal/bin nums
-  :label and label:
+  ":label" and "label:"
   ".include"
   asm macros
   asm directives (.org .align)
 
 * Optimizations
 
-** macros for fixed regs
-** "if-tree" instead of cond.
-
+  macros for fixed regs
+  "if-tree" instead of cond.
 
 * Other Links
 
-  http://denull.ru/dcpu/dcpu.htm
-  reference for cycle times.
+  http://denull.ru/dcpu/dcpu.htm - reference for cycle times.
 
   http://www.bungie.net/stats/reach/online.aspx
 
   https://github.com/0x10cStandardsCommittee/0x10c-Standards
+
   http://0x10cforum.com/
+
   https://github.com/Entroper/DCPU-16-PRNGs/blob/master/rand.dasm
+
   https://github.com/krasin/llvm-dcpu16/
+
   http://dwilliamson.github.com/
