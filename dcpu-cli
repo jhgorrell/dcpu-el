@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# ~/0x10c/dcpu-el/dcpu-el ---
+#
+# $Id: dcpu-cli,v 1.1 2012/04/10 20:04:09 harley Exp $
+#
+
+set -o errexit # exit on error.
+set -o nounset # error if var is unset.
+
+# the directory where this exe is located.
+exe_dir=$(dirname "${BASH_SOURCE[0]}")
+exe_dir=$( cd "${exe_dir}" && pwd )
+
+#sgen_el_end_argdecl
+
+while [[ 0 < "$#" && "$1" = -* ]]
+do
+  arg=${1%%=*}
+  if [[ "${arg}" = "$1" ]]
+  then
+    argval=""
+  else
+    argval=${1:${#arg} + 1}
+  fi
+  case "${arg}" in
+#sgen_el_end_argloop
+    (--) # end of opts
+    break;
+    ;;
+    (*) # didnt match
+    echo "${0}: Unhandled arg! '${1}'"
+    exit 1
+    ;;
+  esac
+done
+
+# --script doesnt have windows
+emacs \
+  --eval '(setq jhg-cload-enabled nil)' \
+  -L ${exe_dir} \
+  -l dcpu-cli.el \
+  -f 'dcpu:cli-main' \
+ ${@}
+
+#sgen_el_end_argcheck
