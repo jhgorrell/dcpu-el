@@ -1,0 +1,28 @@
+;;
+;; ~/0x10c/dcpu-el/test-hello-emacs.dasm ---
+;;
+;; $Id: test-hello-emacs.dasm,v 1.3 2012/04/12 22:32:16 harley Exp $
+;;
+;; Might need to eval these lines with "C-x C-e":
+;;   (add-to-list 'load-path (file-name-directory (buffer-file-name)))
+;;   (autoload 'dasm-mode "dasm-mode")
+;;   (dasm-mode)
+
+.file "test-hello-emacs.dasm"
+.align 2
+
+:start
+        set     i,0
+:loop
+        set     c,[string+i]
+        ife     c,0
+          set     pc,end
+        set     [0x9000+i],c
+        add     i,1
+        set     pc,loop
+:end
+        set     pc,end
+
+:string ;; Hello Emacs!
+dat  0x0048, 0x0065, 0x006c, 0x006c, 0x006f, 0x0020, 0x0045, 0x006d
+dat  0x0061, 0x0063, 0x0073, 0x0021, 0x0000

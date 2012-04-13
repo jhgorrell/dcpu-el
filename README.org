@@ -1,0 +1,55 @@
+# -*- mode: org -*- 
+#+TITLE:   README.org
+#+EMAIL:   harley@panix.com
+#+TEXT:    ~/0x10c/dcpu-el/README.org
+#+TEXT:    $Id: README.org,v 1.7 2012/04/12 22:28:21 harley Exp $
+
+* About "dcpu-el"
+
+  dcpu-el is DCPU-16 written for emacs.
+
+* Quickstart
+
+  git clone .... dcpu-el.git
+  cd dcpu-el.git
+  emacs test-hello-emacs.dasm
+  eval
+
+* Features
+
+** emulator with register, memory and breakpoints
+** assembler
+   
+* todo 
+  command line shell
+  screen device (addr=0x9000 32 wide 12 high)
+  keyboard 
+
+* Future Features
+  dump state to load later (include regs)
+  add external sim
+  other reg names (aliases)
+  octal/bin nums
+  :label and label:
+  ".include"
+  asm macros
+  asm directives (.org .align)
+
+* Optimizations
+
+** macros for fixed regs
+** "if-tree" instead of cond.
+
+
+* Other Links
+
+  http://denull.ru/dcpu/dcpu.htm
+  reference for cycle times.
+
+  http://www.bungie.net/stats/reach/online.aspx
+
+  https://github.com/0x10cStandardsCommittee/0x10c-Standards
+  http://0x10cforum.com/
+  https://github.com/Entroper/DCPU-16-PRNGs/blob/master/rand.dasm
+  https://github.com/krasin/llvm-dcpu16/
+  http://dwilliamson.github.com/
