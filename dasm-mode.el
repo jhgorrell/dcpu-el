@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.2 2012/04/13 23:55:59 harley Exp $
+;; $Id: dasm-mode.el,v 1.3 2012/04/14 04:58:59 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -10,8 +10,9 @@
 
 (defvar dasm-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [f11] 'dasm-assemble-and-run)
-    ;;(define-key map "C-cB" 'dasm-toggle-breakpoint)
+    (define-key map "\C-c\C-c" 'dasm-assemble-and-run)
+    ;; (define-key map "C-cB" 'dasm-toggle-breakpoint)
+    ;; (define-key map "C-cB" 'dasm-toggle-breakpoint)
     map))
 
 (defvar dasm-mode-hooks nil)

@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.8 2012/04/13 23:55:59 harley Exp $
+;; $Id: dcpu-ui.el,v 1.9 2012/04/14 04:58:59 harley Exp $
 ;;
 
 (require 'dcpu-display)
@@ -32,8 +32,11 @@
     (define-key map dcpu:ui-menu-key 'dcpu:ui-toggle)
     (define-key map "b" 'dcpu:ui-set-break)
     (define-key map "c" 'dcpu:ui-clear-break)
+    (define-key map "m" 'dcpu:ui-add-mem-list)
+    ;;
+    (define-key map "g" 'dasm:)
     map))
-    
+
 (defvar dcpu:ui-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map dcpu:ui-menu-key dcpu:ui-menu-keymap)
@@ -63,6 +66,19 @@
   (interactive)
   (let ((addr (read-number "dcpu: clear breakpoint addr: " (or dcpu:pc 0))))
     (dcpu:clear-breakpoint-addrs addr)))
+
+(defvar dcpu:ui-add-mem-list-len 32)
+
+(defun dcpu:ui-add-mem-list ()
+  (interactive)
+  (let ((addr (read-number "dcpu: add mem addr: " (or dcpu:addr dcpu:pc 0)))
+        (len (read-number "dcpu: add mem len: " (or dcpu:ui-add-mem-list-len 32))))
+    (setq dcpu:ui-add-mem-list-len len)
+    (dcpu:add-to-mem-list addr len)
+    ;; update
+    ;;(dcpu:display-mem-list)
+    nil))
+;; (dcpu:ui-add-mem-list)
 
 ;;;;;
 
@@ -129,7 +145,7 @@
    (t
     (dcpu:ui-enter arg))))
 ;; (dcpu:ui-toggle)
-     
+
 (defun dcpu:ui-update ()
   (interactive)
   (save-excursion
@@ -147,5 +163,6 @@
 ;; (dcpu:ui-enter)
 ;; (dcpu:ui-exit)
 ;; (dcpu:ui-update)
-;; (eval-buffer)
+;; (progn (eval-buffer) (dcpu:ui nil)  (dcpu:ui t))
+
 (provide 'dcpu-ui)

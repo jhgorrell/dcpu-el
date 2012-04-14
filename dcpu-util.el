@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-util.el ---
 ;;
-;; $Id: dcpu-util.el,v 1.3 2012/04/12 22:28:21 harley Exp $
+;; $Id: dcpu-util.el,v 1.4 2012/04/14 04:58:59 harley Exp $
 ;;
 
 (defmacro dcpu:u16 (w0)
@@ -58,5 +58,11 @@
       (setq i (1+ i)))
     (insert "\n")))
 ;; (dcpu:insert-string2dat "hello")
+
+;;;;
+
+(defun dcpu:sort-mem-list (memlst)
+  (sort (copy-seq memlst) (lambda (a b) (< (car a) (car b)))))
+;; (dcpu:sort-mem-list '((10 16) (0 16) (100 16)))
 
 (provide 'dcpu-util)

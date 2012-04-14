@@ -1,8 +1,10 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.4 2012/04/14 01:49:22 harley Exp $
+# $Id: Makefile,v 1.5 2012/04/14 04:58:59 harley Exp $
 #
+
+# export JHG_CLOAD_ENABLE=0
 
 _default: _all
 

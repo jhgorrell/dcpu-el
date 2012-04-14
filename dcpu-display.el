@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.9 2012/04/13 05:50:47 harley Exp $
+;; $Id: dcpu-display.el,v 1.10 2012/04/14 04:58:59 harley Exp $
 ;;
 
 (require 'dcpu-defs)
@@ -109,6 +109,11 @@
 
 ;; (progn (eval-buffer) (dcpu:display-regs))
 
+(defun dcpu:add-to-mem-list (addr len)
+  (setq dcpu:display-mem-list 
+        (dcpu:sort-mem-list
+         (cons (list addr len) dcpu:display-mem-list))))
+
 (defun dcpu:display-mem (&optional addr-list)
   (if addr-list
     (setq dcpu:display-mem-list addr-list))
@@ -120,7 +125,8 @@
         (apply 'dcpu:dump-mem (car addr-list))
         (setf addr-list (cdr addr-list))
         (if addr-list
-          (insert "      ---------------------------------------\n"))))))
+          ;; add ";" so it can be loaded
+          (insert ";     ---------------------------------------\n"))))))
 ;; (dcpu:display-mem '((0 32) (#xffe0 32)))
 ;; (dcpu:display-mem '((0 32)))
 ;; (dcpu:display-mem)
