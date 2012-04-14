@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.7 2012/04/12 22:28:21 harley Exp $
+#+TEXT:    $Id: README.org,v 1.10 2012/04/14 01:49:22 harley Exp $
 
 * About "dcpu-el"
 
@@ -16,7 +16,6 @@
   eval
 
 * Features
-
   emulator with register, memory and breakpoints
   assembler
    
@@ -24,6 +23,12 @@
   command line shell
   screen device (addr=0x9000 32 wide 12 high)
   keyboard 
+  autoloads
+
+* Optimizations
+
+  macros for fixed regs
+  "if-tree" instead of cond.
 
 * Future Features
   dump state to load later (include regs)
@@ -34,11 +39,8 @@
   ".include"
   asm macros
   asm directives (.org .align)
-
-* Optimizations
-
-  macros for fixed regs
-  "if-tree" instead of cond.
+  jit
+  compiler
 
 * Other Links
 

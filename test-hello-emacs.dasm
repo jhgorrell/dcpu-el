@@ -1,12 +1,15 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-hello-emacs.dasm ---
 ;;
-;; $Id: test-hello-emacs.dasm,v 1.3 2012/04/12 22:32:16 harley Exp $
+;; $Id: test-hello-emacs.dasm,v 1.4 2012/04/13 23:55:59 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
+;;   (load "~/0x10c/dcpu-el/dcpu")
+;;   (dasm-mode)
+;;
+;; Or put this in your .emacs:
 ;;   (add-to-list 'load-path (file-name-directory (buffer-file-name)))
 ;;   (autoload 'dasm-mode "dasm-mode")
-;;   (dasm-mode)
 
 .file "test-hello-emacs.dasm"
 .align 2

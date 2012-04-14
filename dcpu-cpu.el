@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.9 2012/04/12 07:30:17 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.10 2012/04/13 23:55:59 harley Exp $
 ;;
 
 (require 'dcpu-util)
@@ -92,6 +92,7 @@
 ;; (dcpu:get-mem 0)
 
 (defun dcpu:set-mem (addr val)
+  ;;(assert dcpu:mem-vec)
   (setf (elt dcpu:mem-vec addr) val))
 
 (defun dcpu:set-mem-bulk (addr &rest args)
@@ -102,7 +103,7 @@
       (cond
        ((numberp arg)
         (setf (elt dcpu:mem-vec addr) arg)
-        (incf dcpu:addr))
+        (incf addr))
        ((stringp arg)
         (dotimes (i (length arg))
           (setf 
@@ -123,6 +124,7 @@
 
 ;; @todo macrofiy for fixed args
 (defun dcpu:set-reg (reg val)
+  ;;(assert dcpu:reg-vec)
   (if (symbolp reg)
     (setf reg (position reg dcpu:reg-names)))
   (if (and (numberp reg) (<= 0 reg) (< reg dcpu:reg-vec-size))
@@ -248,18 +250,21 @@
   (when (gethash addr dcpu:breakpoint-addr-table)
     (dcpu:set-break t why)))
 
-(defun dcpu:set-breakpoint-addr (addr)
-  (puthash addr t dcpu:breakpoint-addr-table))
+(defun dcpu:set-breakpoint-addrs (&rest addrs)
+  (dolist (addr addrs)
+    (puthash addr t dcpu:breakpoint-addr-table)))
 
-(defun dcpu:clear-breakpoint-addr ()
-  (rmhash addr dcpu:breakpoint-addr-table))
+(defun dcpu:clear-breakpoint-addrs (&rest addrs)
+  (dolist (addr addrs)
+    (rmhash addr dcpu:breakpoint-addr-table)))
 
 (defun dcpu:clear-all-breakpoint-addr ()
   (clrhash dcpu:breakpoint-addr-table))
 
 ;;;;;
 
-(defun dcpu:run-loop (for-cycles for-icnt)
+(defun dcpu:run-loop (for-icnt &optional for-cycles)
+  ;;(assert dcpu:cur-cpu t "dcpu:cur-cpu needs to be set.")
   (let ((dcpu:cycles (dcpu:get-reg 'cycles))
         (cycles-max  (dcpu:get-reg 'cycles-max))
         (dcpu:icnt   (dcpu:get-reg 'icnt))
@@ -278,26 +283,23 @@
     ;; max cycles?
     (cond
      ((numberp for-cycles)
-      (setq cycles-max (+ dcpu:cycles for-cycles))
+      (setq cycles-max (+ (or dcpu:cycles 0) for-cycles))
       ;;(dcpu:set-break (< cycles-max dcpu:cycles) 'cycles-max)
       )
-     ;; no change
      ((null for-cycles)
-      t)
+      nil)
      ;;
      (t
-      (setq cycles-max for-cycles)))
+      (setq cycles-max t)))
     (dcpu:set-reg 'cycles-max cycles-max)
     ;; max icnt?
     (cond
      ((numberp for-icnt)
-      (setq icnt-max (+ dcpu:icnt for-icnt)))
-     ;;(dcpu:set-break (< icnt-max dcpu:icnt) 'icnt-max)
-     ;; no change
+      (setq icnt-max (+ (or dcpu:icnt 0) for-icnt)))
      ((null for-icnt)
        t)
      (t
-      (setq icnt-max for-icnt)))
+      (setq icnt-max t)))
     (dcpu:set-reg 'icnt-max icnt-max)
 
     ;;
@@ -469,9 +471,8 @@
 
 (defun dcpu:run-1 ()
   (interactive)
-  (dcpu:run-loop nil 1))
+  (dcpu:run-loop 1 nil))
 
-;; (global-set-key [f11] 'dcpu:run-1)
 ;; (eval-buffer)
 ;; (dcpu-test-1)
 ;; (progn (dcpu:standard-ui) (dcpu:ui-update))

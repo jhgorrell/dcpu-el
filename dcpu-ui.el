@@ -1,13 +1,18 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.7 2012/04/13 05:50:47 harley Exp $
+;; $Id: dcpu-ui.el,v 1.8 2012/04/13 23:55:59 harley Exp $
 ;;
 
 (require 'dcpu-display)
 (eval-when-compile (require 'cl))
 
 ;;;;;
+
+(defvar dcpu:ui-active nil)
+(defvar dcpu:ui-enter-hook nil)
+(defvar dcpu:ui-exit-hook nil)
+
 
 (defvar dcpu:ui-reg-win    nil)
 (defvar dcpu:ui-mem-win    nil)
@@ -17,7 +22,52 @@
 (defvar dcpu:ui-window-config nil)
 (defvar dcpu:ui-window-orig-config nil)
 
-(defun dcpu:build-standard-ui ()
+;;;;;
+
+(defvar dcpu:ui-menu-key [f11])
+(defvar dcpu:ui-run-key [f12])
+
+(defvar dcpu:ui-menu-keymap 
+  (let ((map (make-sparse-keymap)))
+    (define-key map dcpu:ui-menu-key 'dcpu:ui-toggle)
+    (define-key map "b" 'dcpu:ui-set-break)
+    (define-key map "c" 'dcpu:ui-clear-break)
+    map))
+    
+(defvar dcpu:ui-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map dcpu:ui-menu-key dcpu:ui-menu-keymap)
+    (define-key map dcpu:ui-run-key 'dcpu:ui-run)
+    map)
+  "")
+
+(define-minor-mode dcpu:ui 
+  "" ;; doc
+  :init-value t
+  :global t
+  :lighter " dcpu"
+  :keymap dcpu:ui-keymap
+  (when dcpu:ui
+    (message "dcpu:ui powerers activated!")))
+;; (dcpu:ui t)
+
+;;;;;
+
+(defun dcpu:ui-set-break ()
+  (interactive)
+  (let ((addr (read-number "dcpu: set breakpoint addr: " (or dcpu:pc 0))))
+    (message "dcpu: breakpoint: %s" addr)
+    (dcpu:set-breakpoint-addrs addr)))
+
+(defun dcpu:ui-clear-break ()
+  (interactive)
+  (let ((addr (read-number "dcpu: clear breakpoint addr: " (or dcpu:pc 0))))
+    (dcpu:clear-breakpoint-addrs addr)))
+
+;;;;;
+
+;; this function ignores "ARG"; but replacements might use it.
+(defun dcpu:build-standard-ui (&optional arg)
   (let ((buf (current-buffer)))
     ;; one window
     (delete-other-windows)
@@ -52,20 +102,33 @@
   (setq dcpu:ui-window-orig-config (current-window-configuration))
   (let ((buf (current-buffer)))
     (if (or arg (not dcpu:ui-window-config))
-      (dcpu:build-standard-ui)
+      (dcpu:build-standard-ui arg)
       (set-window-configuration dcpu:ui-window-config))
+    ;; keep the current buffer in the main window.
     (select-window dcpu:ui-main-win)
-    (set-buffer buf))
-  (dcpu:ui-update))
+    (switch-to-buffer buf))
+  (setq dcpu:ui-active t)
+  (dcpu:ui-update)
+  (run-hooks dcpu:ui-enter-hook))
 
 (defun dcpu:ui-exit ()
   (interactive)
   (if dcpu:ui-window-orig-config
-    (set-window-configuration dcpu:ui-window-orig-config)))
+    (set-window-configuration dcpu:ui-window-orig-config))
+  (setq dcpu:ui-active nil)
+  (run-hooks dcpu:ui-exit-hook))
 
-;; (dcpu:ui-enter t)
-;; (dcpu:ui-enter)
-;; (dcpu:ui-exit)
+(defun dcpu:ui-toggle (arg)
+  (interactive "p")
+  (message "ui-toggle: %s" arg)
+  (cond
+   ((equalp 1 arg)
+    (if dcpu:ui-active
+      (dcpu:ui-exit)
+      (dcpu:ui-enter)))
+   (t
+    (dcpu:ui-enter arg))))
+;; (dcpu:ui-toggle)
      
 (defun dcpu:ui-update ()
   (interactive)
@@ -74,7 +137,15 @@
     (dcpu:display-mem)
     (dcpu:display-screen)
     nil))
+
+(defun dcpu:ui-run (arg)
+  (interactive "p")
+  (message "ui-run: %s" arg)
+  (dcpu:run-loop (if (= 0 arg) t arg) t))
+
+;; (dcpu:ui-enter t)
+;; (dcpu:ui-enter)
+;; (dcpu:ui-exit)
 ;; (dcpu:ui-update)
-
-
+;; (eval-buffer)
 (provide 'dcpu-ui)

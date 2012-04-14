@@ -1,7 +1,7 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.3 2012/04/10 20:04:09 harley Exp $
+# $Id: Makefile,v 1.4 2012/04/14 01:49:22 harley Exp $
 #
 
 _default: _all

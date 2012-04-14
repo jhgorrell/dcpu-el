@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.1 2012/04/12 22:28:21 harley Exp $
+;; $Id: dasm-mode.el,v 1.2 2012/04/13 23:55:59 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -16,6 +16,8 @@
 
 (defvar dasm-mode-hooks nil)
 
+(defvar dasm-mode-label-regexp "[a-z0-9_]+")
+
 (defvar dasm-font-lock-keywords
   `((
     ;; comment
@@ -23,7 +25,9 @@
     ;;
     ("\\\"[^\\\"\n]*\\\"" . font-lock-string-face)
     ;; "":label"" or "label:"
-    ("\\(:\\sw+\\|\\sw+:\\)" . font-lock-function-name-face)
+    (,(concat 
+       "\\(:" dasm-mode-label-regexp "\\|"
+       dasm-mode-label-regexp ":\\)") . font-lock-function-name-face)
     ;; assembler directives
     ("\\.\\sw+" . font-lock-variable-name-face)
     ;; dasm instructions
@@ -42,12 +46,14 @@
           ;; extensions
           "break"
           "print"
+          ;; dcpu keyboard reading. (nonstandard)
+          "getc"
           ))
        "\\>")
      . font-lock-keyword-face)
      )
     t ;; keywords-only
-    t ;; case fold
+    t ;; case fold (@todo: case in regexp?
     ))
     
 (defun dasm-assemble-and-run ()
@@ -76,3 +82,5 @@
   nil)
 
 ;; (eval-buffer)
+
+(provide 'dasm-mode)

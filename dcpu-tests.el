@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-tests.el ---
 ;;
-;; $Id: dcpu-tests.el,v 1.5 2012/04/12 00:48:23 harley Exp $
+;; $Id: dcpu-tests.el,v 1.6 2012/04/13 23:55:59 harley Exp $
 ;;
 
 ;; (progn (setq jhg-cload-enabled nil) (add-to-list 'load-path "."))
@@ -11,9 +11,6 @@
 (defun dcpu-test-1 ()
   (interactive)
   (dcpu:activate-cpu (dcpu:new-cpu))
-  (setq dcpu:ui-mem-list '((0 #x30) 
-                           (#x1000 8)
-                           (#xfff0 16)))
   (dcpu:set-mem-bulk
    0
    #x7c01 #x0030 #x7de1 #x1000 #x0020 #x7803 #x1000 #xc00d ;; 0000:
@@ -23,21 +20,21 @@
    )
   ;;
   (dcpu:trace-buffer-clear)
-  ;;
-  (dcpu:standard-ui)
-  (dcpu:ui-update)
+  (setq dcpu:display-mem-list '((0 #x30) 
+                                (#x1000 8)
+                                (#xfff0 16)))
   ;;
   (dcpu:clear-all-breakpoint-addr)
   (dcpu:set-breakpoint-addr #x0002)
-  ;;(dotimes (i 1) (dcpu:run 10))
   ;;
+  (dcpu:ui-enter)
   nil)
+;; (progn (eval-buffer) (dcpu-test-1))
 
 (defun dcpu-test-2 ()
   (dcpu:activate-cpu (dcpu:new-cpu))
   (dcpu:load-from-file "./fib.dbin")
-  (dcpu:standard-ui)
-  (dcpu:ui-update))
+  (dcpu:ui-enter))
 ;; (dcpu-test-2)
 
 ;; (global-set-key [f11] 'dcpu-test-2)
