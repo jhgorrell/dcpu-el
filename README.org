@@ -1,59 +1,48 @@
-# -*- mode: org -*- 
+# -*- mode: org -*-
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.10 2012/04/14 01:49:22 harley Exp $
+#+TEXT:    $Id: README.org,v 1.11 2012/04/17 04:27:52 harley Exp $
 
 * About "dcpu-el"
-
-  dcpu-el is DCPU-16 written for emacs.
+  dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
 
 * Quickstart
 
-  git clone .... dcpu-el.git
-  cd dcpu-el.git
-  emacs test-hello-emacs.dasm
-  eval
+:  git clone https://github.com/jhgorrell/dcpu-el.git dcpu-el.git
+:  cd dcpu-el.git
+:  emacs test-hello-emacs.dasm
 
 * Features
-  emulator with register, memory and breakpoints
-  assembler
-   
-* todo 
-  command line shell
-  screen device (addr=0x9000 32 wide 12 high)
-  keyboard 
-  autoloads
+  - emulator with register, memory and breakpoints
+  - assembler
+
+* Todo
+  - command line shell
+  - screen device (addr=0x9000 32 wide 12 high)
+  - keyboard
+  - autoloads
 
 * Optimizations
-
-  macros for fixed regs
-  "if-tree" instead of cond.
+  - macros for fixed regs
+  - "if-tree" instead of cond.
 
 * Future Features
-  dump state to load later (include regs)
-  add external sim
-  other reg names (aliases)
-  octal/bin nums
-  ":label" and "label:"
-  ".include"
-  asm macros
-  asm directives (.org .align)
-  jit
-  compiler
+  - dump state to load later (include regs)
+  - add external sim
+  - other reg names (aliases)
+  - octal/bin nums
+  - ":label" and "label:"
+  - ".include"
+  - asm macros
+  - asm directives (.org .align)
+  - jit
+  - compiler
 
 * Other Links
 
-  http://denull.ru/dcpu/dcpu.htm - reference for cycle times.
-
-  http://www.bungie.net/stats/reach/online.aspx
-
-  https://github.com/0x10cStandardsCommittee/0x10c-Standards
-
-  http://0x10cforum.com/
-
-  https://github.com/Entroper/DCPU-16-PRNGs/blob/master/rand.dasm
-
-  https://github.com/krasin/llvm-dcpu16/
-
-  http://dwilliamson.github.com/
+  - http://denull.ru/dcpu/dcpu.htm - reference for cycle times.
+  - https://github.com/0x10cStandardsCommittee/0x10c-Standards
+  - https://github.com/krasin/llvm-dcpu16/
+  - http://dwilliamson.github.com/
+  - http://0x10cforum.com/

@@ -1,7 +1,7 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.6 2012/04/17 03:51:31 harley Exp $
+# $Id: Makefile,v 1.7 2012/04/17 04:27:06 harley Exp $
 #
 
 # export JHG_CLOAD_ENABLE=0
@@ -24,6 +24,14 @@ _cli_1:
 
 _all: _elc
 
+##########
+
+# gem install org-ruby
+README.html: README.org
+	org-ruby README.org > ${@}
+
+_README.html: README.html
+	open README.html
 
 ##########
 
