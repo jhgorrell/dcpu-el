@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.11 2012/04/17 04:27:52 harley Exp $
+#+TEXT:    $Id: README.org,v 1.12 2012/04/17 04:49:51 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -12,14 +12,17 @@
 :  git clone https://github.com/jhgorrell/dcpu-el.git dcpu-el.git
 :  cd dcpu-el.git
 :  emacs test-hello-emacs.dasm
+:
+:  read "test-hello-emacs.dasm" for the keybinding.
 
 * Features
-  - emulator with register, memory and breakpoints
-  - assembler
+  - emacs font-lock mode for dasm assembly
+  - emulator
+  - four pane display of register, memory, screen and source
+  - single step and run to break
+  - screen device (addr=0x9000 32 wide 12 high)
 
 * Todo
-  - command line shell
-  - screen device (addr=0x9000 32 wide 12 high)
   - keyboard
   - autoloads
 

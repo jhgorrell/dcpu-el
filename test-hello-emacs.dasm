@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-hello-emacs.dasm ---
 ;;
-;; $Id: test-hello-emacs.dasm,v 1.5 2012/04/17 03:54:52 harley Exp $
+;; $Id: test-hello-emacs.dasm,v 1.6 2012/04/17 04:49:51 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
 ;;   (load "~/0x10c/dcpu-el/dcpu")
@@ -10,6 +10,20 @@
 ;; Or put this in your .emacs:
 ;;   (add-to-list 'load-path (file-name-directory (buffer-file-name)))
 ;;   (autoload 'dasm-mode "dasm-mode")
+
+;; Assemble with "C-c C-c"
+;; Toogle the UI with "F11 F11"
+;; Single step with "F12"
+;; Run N instructions with "ESC N F12"
+;; Run to breakpoint with "ESC 0 F12"
+
+;; Other keys
+;; F11 R - Reset the cpu and mem.
+;; F11 l - load a file to mem
+;; F11 s - save mem to a file
+;; F11 b - set a breakpoint at the address
+;; F11 c - clear a breakpoint
+;; F11 m - add memory region to the window.
 
 ;; a16 doesnt like these:
 ;; .file "test-hello-emacs.dasm"
