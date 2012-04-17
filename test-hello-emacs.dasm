@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-hello-emacs.dasm ---
 ;;
-;; $Id: test-hello-emacs.dasm,v 1.4 2012/04/13 23:55:59 harley Exp $
+;; $Id: test-hello-emacs.dasm,v 1.5 2012/04/17 03:54:52 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
 ;;   (load "~/0x10c/dcpu-el/dcpu")
@@ -11,8 +11,9 @@
 ;;   (add-to-list 'load-path (file-name-directory (buffer-file-name)))
 ;;   (autoload 'dasm-mode "dasm-mode")
 
-.file "test-hello-emacs.dasm"
-.align 2
+;; a16 doesnt like these:
+;; .file "test-hello-emacs.dasm"
+;; .align 2
 
 :start
         set     i,0
@@ -26,6 +27,10 @@
 :end
         set     pc,end
 
+:padding_to_see
+WORD 0xFFFF, 0xFFFF, 0xFFFF
+
 :string ;; Hello Emacs!
-dat  0x0048, 0x0065, 0x006c, 0x006c, 0x006f, 0x0020, 0x0045, 0x006d
-dat  0x0061, 0x0063, 0x0073, 0x0021, 0x0000
+WORD 0x0048, 0x0065, 0x006c, 0x006c, 0x006f, 0x0020, 0x0045, 0x006d
+WORD 0x0061, 0x0063, 0x0073, 0x0021, 0x0021, 0x0021
+WORD 0x0000

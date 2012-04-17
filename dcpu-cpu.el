@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.10 2012/04/13 23:55:59 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.11 2012/04/17 03:52:55 harley Exp $
 ;;
 
 (require 'dcpu-util)
@@ -42,7 +42,11 @@
 (defun dcpu:load-from-file (path)
   (when (not (file-readable-p path))
     (error "file is not readable"))
-  (dcpu:load-from-buffer (find-file path)))
+  (let ((buf (get-buffer-create "*dcpu load mem*")))
+    (with-current-buffer buf
+      (erase-buffer)
+      (insert-file-contents path nil)
+      (dcpu:load-from-buffer buf))))
 
 (defun dcpu:load-from-buffer (buf)
   ;; @todo compile or assemble buffer?
@@ -74,7 +78,7 @@
             (setf addr (dcpu:u16+ 1 addr)))
            (t
             (throw 'break nil)))
-          (message "LB: %s" (match-string-no-properties 0))
+          ;;(message "LB: %s" (match-string-no-properties 0))
           (goto-char (match-end 0)))))))
 ;; (dcpu:load-from-file "../programs/test-1.bin")
 

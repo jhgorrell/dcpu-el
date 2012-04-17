@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.3 2012/04/14 04:58:59 harley Exp $
+;; $Id: dasm-mode.el,v 1.4 2012/04/17 04:00:12 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -43,7 +43,7 @@
           ;; special
           "jsr"
           ;; pseudo-instrs
-          "dat"
+          "dat" "word"
           ;; extensions
           "break"
           "print"
@@ -56,13 +56,37 @@
     t ;; keywords-only
     t ;; case fold (@todo: case in regexp?
     ))
-    
+
+(defvar dasm-asm-program "./dcpu16.git/a16")
+
+(defun dasm-assemble-file (filename)
+  (let ((buf (get-buffer-create "*dasm assemble*"))
+        (cmd (concat
+              dasm-asm-program " "
+              "-O hex "
+              "-o " filename ".hex "
+              filename)))
+    (switch-to-buffer buf)
+    (erase-buffer)
+    (insert ";; cmd" cmd "\n")
+    (call-process-shell-command cmd nil buf t)))
+;; (dasm-assemble-file "./test-hello-emacs.dasm")
+
 (defun dasm-assemble-and-run ()
+  (require 'dcpu)
   (interactive)
   (save-buffer)
-  (dasm:assemble-buffer-to-mem)
-  (dcpu:standard-ui)
-  nil)
+  ;;
+  (let ((fn (buffer-file-name))
+        (buf (current-buffer)))
+    (dcpu:activate-cpu (dcpu:new-cpu))
+    (dasm-assemble-file fn)
+    (dcpu:load-from-file (concat fn ".hex"))
+    (when (not dcpu:display-mem-list)
+      (dcpu:add-to-mem-list 0 (* 8 20)))
+    (dcpu:ui-enter)
+    (dcpu:ui-update)
+    (switch-to-buffer buf)))
 
 (defun dasm-mode ()
   "Major mode for editing DCPU-16 assembly."

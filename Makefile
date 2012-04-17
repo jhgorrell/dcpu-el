@@ -1,7 +1,7 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.5 2012/04/14 04:58:59 harley Exp $
+# $Id: Makefile,v 1.6 2012/04/17 03:51:31 harley Exp $
 #
 
 # export JHG_CLOAD_ENABLE=0
@@ -32,3 +32,24 @@ _all: _elc
 
 _github_push:
 	git push -u origin master
+
+##########
+
+A16_EXE:=dcpu16.git/a16
+
+dcpu16.git:
+	git clone https://github.com/swetland/dcpu16.git ${@}
+
+${A16_EXE}: | dcpu16.git
+	cd dcpu16.git && make
+#####
+
+%.bin: %.dasm | ${A16_EXE}
+	${A16_EXE} -o ${@} -O binary $<
+%.hex: %.dasm | ${A16_EXE}
+	${A16_EXE} -o ${@} -O hex $<
+%.pretty: %.dasm | ${A16_EXE}
+	${A16_EXE} -o ${@} -O pretty $<
+
+##########
+

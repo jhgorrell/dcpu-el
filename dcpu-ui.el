@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.9 2012/04/14 04:58:59 harley Exp $
+;; $Id: dcpu-ui.el,v 1.10 2012/04/17 04:01:09 harley Exp $
 ;;
 
 (require 'dcpu-display)
@@ -30,11 +30,17 @@
 (defvar dcpu:ui-menu-keymap 
   (let ((map (make-sparse-keymap)))
     (define-key map dcpu:ui-menu-key 'dcpu:ui-toggle)
+    ;;
+    (define-key map "R" 'dcpu:ui-reset-cpu)
+    ;;
+    (define-key map "l" 'dcpu:ui-load-mem)
+    (define-key map "s" 'dcpu:ui-save-mem)
+    ;;
     (define-key map "b" 'dcpu:ui-set-break)
     (define-key map "c" 'dcpu:ui-clear-break)
     (define-key map "m" 'dcpu:ui-add-mem-list)
     ;;
-    (define-key map "g" 'dasm:)
+    ;;(define-key map "g" 'dasm:)
     map))
 
 (defvar dcpu:ui-keymap
@@ -158,6 +164,16 @@
   (interactive "p")
   (message "ui-run: %s" arg)
   (dcpu:run-loop (if (= 0 arg) t arg) t))
+
+;;;;;
+
+(defun dcpu:ui-load-mem (filename)
+  (interactive "fLoad mem from file: ")
+  (dcpu:load-from-file filename))
+
+(defun dpcu:ui-save-mem (filename)
+  (interactive "FSave mem to file: ")
+  (dcpu:save-to-file filename))
 
 ;; (dcpu:ui-enter t)
 ;; (dcpu:ui-enter)
