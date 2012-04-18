@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.11 2012/04/17 03:52:55 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.12 2012/04/18 07:41:00 harley Exp $
 ;;
 
 (require 'dcpu-util)
@@ -115,6 +115,15 @@
            addr (1+ addr))))
        (t
         (error ""))))))
+
+;; *sigh* diff order of args than "memset", but better sense.
+(defun dcpu:memset (addr len val)
+  (dotimes (i len)
+    (setf (elt (elt dcpu:mem-vec addr) val)
+          addr (1+ addr))))
+
+(defun dcpu:mem-clear ()
+  (dcpu:memset 0 #xFFFF 0))
 
 ;; @todo macroize
 (defun dcpu:get-reg (reg)
@@ -346,6 +355,15 @@
            (dcpu:set-mem dcpu:sp dcpu:pc)
            (setq val-a (dcpu:get-rx-val ra))
            (setf dcpu:pc val-a))
+          ;; GETC ;; 000000 000010 0000 => 0x0020
+          (#x2
+           ;;(dcpu:display-screen)
+           (dcpu:ui-update)
+           (let ((c (read-char "DCPU read-char:" nil dcpu:read-char-delay)))
+             (if (not c)
+               (setq c 0))
+             (setq val c
+                   dcpu:dst-reg ra)))
           )
         nil)
        ;; basic...
@@ -467,9 +485,13 @@
       (dcpu:check-breakpoint-addr dcpu:pc 'pc-break)
 
       ;; post-step updates
-      (dcpu:ui-update)
+      (when (and dcpu:sit-for (not dcpu:break))
+        (dcpu:ui-update)
+        (sit-for dcpu:sit-for))
+
       (run-hooks 'dcpu:post-step-hooks))
     ;; post-run update
+    (dcpu:ui-update)
     (run-hooks 'dcpu:post-run-hooks)
     nil))
 

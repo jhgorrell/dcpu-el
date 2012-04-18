@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.9 2012/04/13 05:50:47 harley Exp $
+;; $Id: dcpu-defs.el,v 1.10 2012/04/18 07:41:00 harley Exp $
 ;;
 
 (eval-when-compile (require 'cl))
@@ -90,6 +90,10 @@
 (defvar dcpu:screen-y 12)
 (defvar dcpu:screen-addr #x9000)
 (defvar dcpu:screen-display-ctl nil)
+
+;;
+(defvar dcpu:sit-for nil)
+(defvar dcpu:read-char-delay 10.0)
 
 ;;;;;;;;;;
 

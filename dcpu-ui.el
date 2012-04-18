@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.10 2012/04/17 04:01:09 harley Exp $
+;; $Id: dcpu-ui.el,v 1.11 2012/04/18 07:41:00 harley Exp $
 ;;
 
 (require 'dcpu-display)
@@ -25,7 +25,7 @@
 ;;;;;
 
 (defvar dcpu:ui-menu-key [f11])
-(defvar dcpu:ui-run-key [f12])
+(defvar dcpu:ui-run-key  [f12])
 
 (defvar dcpu:ui-menu-keymap 
   (let ((map (make-sparse-keymap)))
@@ -39,6 +39,10 @@
     (define-key map "b" 'dcpu:ui-set-break)
     (define-key map "c" 'dcpu:ui-clear-break)
     (define-key map "m" 'dcpu:ui-add-mem-list)
+    ;;
+    (define-key map "1" 'dcpu:ui-run-speed-1)
+    (define-key map "2" 'dcpu:ui-run-speed-2)
+    (define-key map "3" 'dcpu:ui-run-speed-3)
     ;;
     ;;(define-key map "g" 'dasm:)
     map))
@@ -174,6 +178,29 @@
 (defun dpcu:ui-save-mem (filename)
   (interactive "FSave mem to file: ")
   (dcpu:save-to-file filename))
+
+;;;;;
+
+(defun dcpu:ui-run-speed-1 ()
+  "Turn off updates and run fast."
+  (interactive)
+  (setq dcpu:sit-for nil)
+  (dcpu:run-loop t t)
+  nil)
+
+(defun dcpu:ui-run-speed-2 ()
+  "Run fast with updates."
+  (interactive)
+  (setq dcpu:sit-for 0.1)
+  (dcpu:run-loop t t)
+  nil)
+
+(defun dcpu:ui-run-speed-3 ()
+  "Run slow with updates."
+  (interactive)
+  (setq dcpu:sit-for 0.5)
+  (dcpu:run-loop t t)
+  nil)
 
 ;; (dcpu:ui-enter t)
 ;; (dcpu:ui-enter)

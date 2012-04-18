@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.12 2012/04/17 04:49:51 harley Exp $
+#+TEXT:    $Id: README.org,v 1.13 2012/04/17 04:53:23 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -13,7 +13,7 @@
 :  cd dcpu-el.git
 :  emacs test-hello-emacs.dasm
 :
-:  read "test-hello-emacs.dasm" for the keybinding.
+:  read "test-hello-emacs.dasm" for the keybindings.
 
 * Features
   - emacs font-lock mode for dasm assembly
