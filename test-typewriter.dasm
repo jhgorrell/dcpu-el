@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-typewriter.dasm ---
 ;;
-;; $Id: test-typewriter.dasm,v 1.2 2012/04/18 07:39:30 harley Exp $
+;; $Id: test-typewriter.dasm,v 1.3 2012/04/20 07:23:07 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
 ;;   (load "~/0x10c/dcpu-el/dcpu")
@@ -15,39 +15,39 @@
 
 ;; LKEY_xxxx labels jump here.
 :loop_char
-        ;; wrap to start
+        ; wrap to start
         and     i,0x007f
         set     a,0
-        ;; This is GETC, but "a16" doesnt have asm for it.
+        ; This is GETC, but "a16" doesnt have asm for it.
         word    0x0020 ; getc a
-;; no char read
+        ; no char read
         ife     a,0
           set     pc,loop_char
-;; delete?
+        ; delete?
         ife     a,0x7F
           set     pc,LKEY_delete
-;; normal?
+        ; normal?
         ifg     a,0x1f
           set     pc,LKEY_selfinsert
-;; try ctl keys
+        ; try ctl keys
         set     pc,LKEY_a
         word    0xFFFF
 
 :LKEY_a
-        ifn     a,0x01 ;; ^A
+        ifn     a,0x01 ; ^A
           set     pc,LKEY_k
         jsr     do_startofline
         set     pc,loop_char
 
 :LKEY_k
-        ifn     a,0x0B ;; ^K
+        ifn     a,0x0B ; ^K
           set     pc,LKEY_m
         jsr     do_killline
         set     pc,loop_char
         word    0xffff
 
 :LKEY_m
-        ifn     a,0x0D ;; ^M
+        ifn     a,0x0D ; ^M
           set     pc,LKEY_z
         jsr     do_nextline
         jsr     do_killline
@@ -55,7 +55,7 @@
         word    0xffff
 
 :LKEY_z
-        ifn     a,0x1a ;; ^z
+        ifn     a,0x1a ; ^z
           set     pc,LKEY_selfinsert
         set     i,0
         jsr     do_killline
@@ -69,7 +69,7 @@
         set     pc,loop_char
         word    0xFFFF
 
-:LKEY_selfinsert ;; self insert char
+:LKEY_selfinsert ; self insert char
         set     [0x9000+i],a
         add     i,1
         set     pc,loop_char
@@ -97,3 +97,5 @@
           set     pc,pop
         set     pc,do_killline_1
         word    0xffff
+
+;; (indent-buffer)

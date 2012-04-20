@@ -1,8 +1,14 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu/programs/test-hw.el ---
 ;;
-;; $Id: dcpu.el,v 1.9 2012/04/13 23:55:59 harley Exp $
+;; $Id: dcpu.el,v 1.10 2012/04/20 07:20:37 harley Exp $
 ;;
+
+;; Homepage:   https://github.com/jhgorrell/dcpu-el
+;; Author:     James Harley Gorrell <harley@panix.com>
+;; Keywords:   dasm-16, emulator, assembler
+;; Version:    0.1
+;; License:    GPL v3 or later (same as emacs)
 
 ;; (eval-buffer)
 ;; Add our dir name to load-path so '(load "path/to/dcpu-el/dcpu")' works
