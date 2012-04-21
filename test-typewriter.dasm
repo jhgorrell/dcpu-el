@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-typewriter.dasm ---
 ;;
-;; $Id: test-typewriter.dasm,v 1.4 2012/04/20 19:57:11 harley Exp $
+;; $Id: test-typewriter.dasm,v 1.5 2012/04/21 05:27:39 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
 ;;   (load "~/0x10c/dcpu-el/dasm-mode")
@@ -18,11 +18,11 @@
         ; wrap to start
         and     i,0x007f
         ; draw the cursor
-        set     [0x9000+i],0x23 ; '#'
+        set     [0x8000+i],0x23 ; '#'
         set     a,0
         ; This is GETC, but "a16" doesnt have asm for it.
         word    0x0020 ; getc a
-        set     [0x9000+i],0x20 ; ' '
+        set     [0x8000+i],0x20 ; ' '
         ; no char read
         ife     a,0
           set     pc,loop_char
@@ -69,12 +69,12 @@
 :LKEY_delete
         ifg     i,0
           sub     i,1
-        set     [0x9000+i],0
+        set     [0x8000+i],0
         set     pc,loop_char
         word    0xFFFF
 
 :LKEY_selfinsert ; self insert char
-        set     [0x9000+i],a
+        set     [0x8000+i],a
         add     i,1
         set     pc,loop_char
         word    0xffff
@@ -94,7 +94,7 @@
 :do_killline
         set     a,i
 :do_killline_1
-        set     [0x9000+a],0
+        set     [0x8000+a],0
         add     a,1
         set     c,a
         and     c,0x1F

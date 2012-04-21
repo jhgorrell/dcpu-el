@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.10 2012/04/14 04:58:59 harley Exp $
+;; $Id: dcpu-display.el,v 1.11 2012/04/21 05:27:39 harley Exp $
 ;;
 
 (require 'dcpu-defs)
@@ -110,7 +110,7 @@
 ;; (progn (eval-buffer) (dcpu:display-regs))
 
 (defun dcpu:add-to-mem-list (addr len)
-  (setq dcpu:display-mem-list 
+  (setq dcpu:display-mem-list
         (dcpu:sort-mem-list
          (cons (list addr len) dcpu:display-mem-list))))
 
@@ -170,17 +170,34 @@
        (t
         ".")))))
 
+(defun dcpu:color-char (char color)
+  (let* ((nib1 (logand (ash color -4) #xf))
+         (nib0 (logand color #xf))
+         (fg   (elt dcpu:color-table nib1))
+         (bg   (elt dcpu:color-table nib0)))
+    (propertize
+     char
+     'face (list
+            :foreground fg
+            :background bg))))
+;; (insert (dcpu:color-char "X" #xFF))X
+
 (defun dcpu:display-screen ()
   (interactive)
   (with-current-buffer (get-buffer-create dcpu:screen-bufname)
     (erase-buffer)
-    (let ((addr dcpu:screen-addr))
+    (let ((addr dcpu:screen-addr)
+          word char)
       (dotimes (y dcpu:screen-y)
         (dotimes (x dcpu:screen-x)
-          (insert (dcpu:screen-word2char (dcpu:get-mem addr)))
+          (setq word (dcpu:get-mem addr))
+          (setq char (dcpu:screen-word2char word))
+          (if dcpu:screen-color
+            (setq char (dcpu:color-char char (logand (ash word -8) #xFF))))
+          (insert char)
           (incf addr))
         (insert "\n")))))
-;; (progn (dcpu:set-mem-bulk #x9000 "hello there!\n\n") (dcpu:screen-update))
+;; (progn (dcpu:set-mem-bulk #x8000 "hello there!\n\n") (dcpu:screen-update))
 ;; (dcpu:screen-update)
 
 ;;;;;

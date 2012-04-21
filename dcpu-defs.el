@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.10 2012/04/18 07:41:00 harley Exp $
+;; $Id: dcpu-defs.el,v 1.11 2012/04/21 05:27:39 harley Exp $
 ;;
 
 (eval-when-compile (require 'cl))
@@ -85,11 +85,31 @@
 (defvar dcpu:ui-mem-lines 16)
 (defvar dcpu:ui-mem-list nil)
 
-;;
+;; http://0x10cwiki.com/wiki/Video_RAM
 (defvar dcpu:screen-x 32) 
 (defvar dcpu:screen-y 12)
-(defvar dcpu:screen-addr #x9000)
+(defvar dcpu:screen-addr #x8000)
 (defvar dcpu:screen-display-ctl nil)
+(defvar dcpu:screen-color nil)
+;; (setq dcpu:screen-color t)
+
+(defvar dcpu:color-table
+  '("#000000"  
+    "#0000aa"  
+    "#00aa00"  
+    "#00aaaa"  
+    "#aa0000"  
+    "#aa00aa"  
+    "#aa5500"  
+    "#aaaaaa"
+    "#555555"  
+    "#5555ff"  
+    "#55ff55"  
+    "#55ffff"  
+    "#ff5555" 
+    "#ff55ff"  
+    "#ffff55"  
+    "#ffffff"))
 
 ;;
 (defvar dcpu:sit-for nil)

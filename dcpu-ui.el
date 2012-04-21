@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.12 2012/04/20 19:57:44 harley Exp $
+;; $Id: dcpu-ui.el,v 1.13 2012/04/21 05:27:39 harley Exp $
 ;;
 
 (require 'dcpu-display)
@@ -12,7 +12,6 @@
 (defvar dcpu:ui-active nil)
 (defvar dcpu:ui-enter-hook nil)
 (defvar dcpu:ui-exit-hook nil)
-
 
 (defvar dcpu:ui-reg-win    nil)
 (defvar dcpu:ui-mem-win    nil)
@@ -43,6 +42,8 @@
     (define-key map "1" 'dcpu:ui-run-speed-1)
     (define-key map "2" 'dcpu:ui-run-speed-2)
     (define-key map "3" 'dcpu:ui-run-speed-3)
+    ;;
+    (define-key map "C" 'dcpu:ui-toggle-screen-color)
     ;;
     ;;(define-key map "g" 'dasm:)
     map))
@@ -128,9 +129,9 @@
   (if (not dcpu:ui-active)
     (setq dcpu:ui-window-orig-config (current-window-configuration)))
   (let ((buf (current-buffer)))
-    (if (and (not arg) dcpu:ui-window-config)
-      (dcpu:build-standard-ui arg)
-      (set-window-configuration dcpu:ui-window-config))
+    (if (or (not arg) (not dcpu:ui-window-config))
+      (dcpu:build-standard-ui arg))
+    (set-window-configuration dcpu:ui-window-config)
     ;; keep the current buffer in the main window.
     (select-window dcpu:ui-main-win)
     (switch-to-buffer buf))
@@ -207,6 +208,20 @@
   (setq dcpu:sit-for 0.5)
   (dcpu:run-loop t t)
   nil)
+
+;;;;;
+
+(defun dcpu:ui-toggle-screen-color (&optional arg)
+  (interactive "P")
+  (cond
+   ((null arg)
+    (setq dcpu:screen-color (not dcpu:screen-color)))
+   ((equalp 0 arg)
+    (setq dcpu:screen-color nil))
+   ((numberp arg)
+    (setq dcpu:screen-color t)))
+  (dcpu:display-screen))
+;; (dcpu:ui-toggle-screen-color)
 
 ;; (dcpu:ui-enter t)
 ;; (dcpu:ui-enter)

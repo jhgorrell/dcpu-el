@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-hello-emacs.dasm ---
 ;;
-;; $Id: test-hello-emacs.dasm,v 1.6 2012/04/17 04:49:51 harley Exp $
+;; $Id: test-hello-emacs.dasm,v 1.7 2012/04/21 05:27:39 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
 ;;   (load "~/0x10c/dcpu-el/dcpu")
@@ -35,16 +35,17 @@
         set     c,[string+i]
         ife     c,0
           set     pc,end
-        set     [0x9000+i],c
+        ; bor     c,0xF000 ; force color
+        set     [0x8000+i],c
         add     i,1
         set     pc,loop
 :end
         set     pc,end
 
 :padding_to_see
-WORD 0xFFFF, 0xFFFF, 0xFFFF
+        WORD    0xFFFF, 0xFFFF, 0xFFFF
 
 :string ;; Hello Emacs!
-WORD 0x0048, 0x0065, 0x006c, 0x006c, 0x006f, 0x0020, 0x0045, 0x006d
-WORD 0x0061, 0x0063, 0x0073, 0x0021, 0x0021, 0x0021
-WORD 0x0000
+        WORD    0x2048, 0x2065, 0x206c, 0x206c, 0x206f, 0x0020, 0x4045, 0x406d
+        WORD    0x4061, 0x4063, 0x4073, 0x5021, 0x5021, 0x5021
+        WORD    0x0000
