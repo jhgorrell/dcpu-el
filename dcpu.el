@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu/programs/test-hw.el ---
 ;;
-;; $Id: dcpu.el,v 1.10 2012/04/20 07:20:37 harley Exp $
+;; $Id: dcpu.el,v 1.11 2012/04/21 21:54:31 harley Exp $
 ;;
 
 ;; Homepage:   https://github.com/jhgorrell/dcpu-el
@@ -18,9 +18,6 @@
 
 ;; these are in dependency order
 
-;; this is standalone
-(require 'dasm-mode)
-
 ;; the emulator
 (require 'dcpu-defs)
 (require 'dcpu-util)
@@ -30,6 +27,38 @@
 
 ;; the assembler
 (require 'dasm-parse)
+
+;; this is standalone
+;; (require 'dasm-mode)
+
+;;
+(defvar dcpu:el-files
+  '("dasm-mode.el"
+    "dasm-parse.el"
+    "dcpu.el"
+    "dcpu-cli.el" "dcpu-cpu.el" "dcpu-defs.el" "dcpu-display.el"
+    "dcpu-tests.el" "dcpu-ui.el" "dcpu-util.el" "dcpu.el"))
+;; (file-expand-wildcards "dcpu*.el")
+
+;;;###autoload
+(defun dcpu:generate-autoloads ()
+  (interactive)
+  (require 'autoload)
+  (let ((generated-autoload-file (concat default-directory "/dcpu-autoloads.el"))
+        (autoload-modified-buffers nil))
+    (if (file-exists-p generated-autoload-file)
+      (delete-file generated-autoload-file))
+    (autoload-ensure-default-file generated-autoload-file)
+    ;;
+    (dolist (f dcpu:el-files)
+      (update-file-autoloads f nil)
+      ;;(byte-compile-file f)
+      nil)
+    (autoload-save-buffers)
+    ;;
+    ;;(byte-compile-file generated-autoload-file)
+    nil))
+;; (progn (eval-buffer) (dcpu:generate-autoloads))
 
 ;; ok!
 (provide 'dcpu)

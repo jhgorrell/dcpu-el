@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dasm-parse.el ---
 ;;
-;; $Id: dasm-parse.el,v 1.10 2012/04/12 22:28:21 harley Exp $
+;; $Id: dasm-parse.el,v 1.11 2012/04/21 21:54:31 harley Exp $
 ;;
 ;;
 
@@ -12,7 +12,11 @@
 ;; (progn (add-to-list 'load-path ".") (eval-buffer))
 (require 'elex)
 (require 'dasm-defs)
-(eval-when-compile (require 'cl))
+
+(eval-when-compile
+  (require 'cl))
+
+(require 'cl) ;; find & position
 
 ;;;;;
 

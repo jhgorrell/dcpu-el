@@ -1,14 +1,20 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.12 2012/04/18 07:41:00 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.13 2012/04/21 21:54:31 harley Exp $
 ;;
 
 (require 'dcpu-util)
-(eval-when-compile (require 'cl))
+(require 'dcpu-defs)
+
+(require 'cl) ;; find & position
+
+(eval-when-compile
+  (require 'cl))
 
 ;;;;;
 
+;;;#autoload
 (defun dcpu:cpu-init (cpu)
   (setf
    (dcpu:cpu-dev-vec cpu) (make-vector dcpu:dev-vec-size nil)
@@ -19,6 +25,7 @@
     nil)
   cpu)
 
+;;;#autoload
 (defun dcpu:new-cpu ()
   (dcpu:cpu-init (dcpu:make-cpu)))
 ;; (dcpu:new-cpu)
@@ -32,13 +39,20 @@
   ;;cpu)
   nil)
 
+;;;#autoload
 (defun dcpu:ensure-active-cpu ()
   (when (not dcpu:cur-cpu)
     (dcpu:activate-cpu (dcpu:new-cpu))))
 ;; (dcpu:ensure-active-cpu)
 
+(defun dcpu:reset ()
+  "Reset all the registers to 0."
+  (interactive)
+  (fillarray dcpu:reg-vec 0))
+
 ;;;;;;;;;;
 
+;;;#autoload
 (defun dcpu:load-from-file (path)
   (when (not (file-readable-p path))
     (error "file is not readable"))
@@ -119,8 +133,8 @@
 ;; *sigh* diff order of args than "memset", but better sense.
 (defun dcpu:memset (addr len val)
   (dotimes (i len)
-    (setf (elt (elt dcpu:mem-vec addr) val)
-          addr (1+ addr))))
+    (setf (elt (elt dcpu:mem-vec addr) val))
+    (setq addr (1+ addr))))
 
 (defun dcpu:mem-clear ()
   (dcpu:memset 0 #xFFFF 0))
@@ -269,7 +283,7 @@
 
 (defun dcpu:clear-breakpoint-addrs (&rest addrs)
   (dolist (addr addrs)
-    (rmhash addr dcpu:breakpoint-addr-table)))
+    (remhash addr dcpu:breakpoint-addr-table)))
 
 (defun dcpu:clear-all-breakpoint-addr ()
   (clrhash dcpu:breakpoint-addr-table))

@@ -1,9 +1,13 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-cli.el ---
 ;;
-;; $Id: dcpu-cli.el,v 1.1 2012/04/10 20:04:09 harley Exp $
+;; $Id: dcpu-cli.el,v 1.2 2012/04/21 21:54:31 harley Exp $
 ;;
 
+(eval-when-compile
+  (require 'cl))
+
+;; (require 'cl)
 (defvar dcpu:cli-main-args nil)
 
 ;;(message "dcpu-cli: %s" argv)
@@ -22,9 +26,8 @@
   (when (car dcpu:cli-main-args)
     (dcpu:load-file (car dcpu:cli-main-args)))
   ;;
-  (dcpu:standard-ui)
-  (dcpu:ui-update)
-  )
+  (dcpu:ui-enter)
+  nil)
 
 ;; dcpu:cli-main-args
 ;; (dcpu:cli-main)

@@ -1,28 +1,32 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.7 2012/04/17 04:27:06 harley Exp $
+# $Id: Makefile,v 1.8 2012/04/21 21:54:31 harley Exp $
 #
 
 # export JHG_CLOAD_ENABLE=0
 
 _default: _all
 
-EL_FILES:=$(wildcard *.el)
+EL_FILES:=$(wildcard  dasm*.el dcpu*.el elex*.el)
 ELC_FILES=${EL_FILES:%.el=%.elc}
 
+dcpu-autoloads.el: ${EL_FILES}
+	-rm -f ${@}
+	emacs --batch -L . -l 'dcpu.el' -f 'dcpu:generate-autoloads'
+
 %.elc: %.el
-	emacs --batch  -L . -f batch-byte-compile ${<}
+	emacs --batch  -L . -f 'batch-byte-compile' ${<}
 
 _elc: ${ELC_FILES}
 
 clean:
-	rm *.elc *~
+	-rm -f $(wildcard *.elc *~ dcpu-autoloads.el test-*.dasm.hex)
 
 _cli_1:
 	./dcpu-cli ../programs/test-1.bin
 
-_all: _elc
+_all: dcpu-autoloads.el _elc
 
 ##########
 

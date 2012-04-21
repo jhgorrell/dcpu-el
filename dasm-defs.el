@@ -1,11 +1,12 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dasm-defs.el ---
 ;;
-;; $Id: dasm-defs.el,v 1.4 2012/04/10 20:49:37 harley Exp $
+;; $Id: dasm-defs.el,v 1.5 2012/04/21 21:54:31 harley Exp $
 ;;
 
 (require 'elex)
-(eval-when-compile (require 'cl))
+(eval-when-compile
+  (require 'cl))
 
 ;; global vars.
 (defvar dasm:cur-pgm    nil)

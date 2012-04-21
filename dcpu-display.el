@@ -1,12 +1,13 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.11 2012/04/21 05:27:39 harley Exp $
+;; $Id: dcpu-display.el,v 1.12 2012/04/21 21:54:31 harley Exp $
 ;;
 
 (require 'dcpu-defs)
 (require 'dcpu-util)
-(eval-when-compile (require 'cl))
+(eval-when-compile
+  (require 'cl))
 
 ;;;;;
 
@@ -91,7 +92,7 @@
       (if (dcpu:get-reg 'skip)
         (insert " " (propertize "SKIP" 'face 'dcpu:reg) " "))
       ;; dont
-      (let ((tmp-break (delete 'icnt-max (copy-list dcpu:break))))
+      (let ((tmp-break (delete 'icnt-max (copy-tree dcpu:break))))
         (if tmp-break
           (insert
            "          "
@@ -133,7 +134,8 @@
 
 ;; @todo width
 (defun dcpu:dump-mem (addr len)
-  (let ((addr-end (+ addr len)))
+  (let ((addr-end (+ addr len))
+        word wstr)
     (while (< addr addr-end)
       (when (= 0 (logand addr #x07))
         (dcpu:iwf 'dcpu:addr (dcpu:fmt-addr addr) ":"))

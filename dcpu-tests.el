@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-tests.el ---
 ;;
-;; $Id: dcpu-tests.el,v 1.6 2012/04/13 23:55:59 harley Exp $
+;; $Id: dcpu-tests.el,v 1.7 2012/04/21 21:54:31 harley Exp $
 ;;
 
 ;; (progn (setq jhg-cload-enabled nil) (add-to-list 'load-path "."))
@@ -25,7 +25,7 @@
                                 (#xfff0 16)))
   ;;
   (dcpu:clear-all-breakpoint-addr)
-  (dcpu:set-breakpoint-addr #x0002)
+  (dcpu:set-breakpoint-addrs #x0002)
   ;;
   (dcpu:ui-enter)
   nil)

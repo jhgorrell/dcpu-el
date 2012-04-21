@@ -1,11 +1,14 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.13 2012/04/21 05:27:39 harley Exp $
+;; $Id: dcpu-ui.el,v 1.14 2012/04/21 21:54:31 harley Exp $
 ;;
 
 (require 'dcpu-display)
-(eval-when-compile (require 'cl))
+(require 'dcpu-cpu)
+
+(eval-when-compile
+  (require 'cl))
 
 ;;;;;
 
@@ -30,7 +33,7 @@
   (let ((map (make-sparse-keymap)))
     (define-key map dcpu:ui-menu-key 'dcpu:ui-toggle)
     ;;
-    (define-key map "R" 'dcpu:ui-reset-cpu)
+    (define-key map "R" 'dcpu:cpu-reset)
     ;;
     (define-key map "l" 'dcpu:ui-load-mem)
     (define-key map "s" 'dcpu:ui-save-mem)
@@ -45,6 +48,8 @@
     ;;
     (define-key map "C" 'dcpu:ui-toggle-screen-color)
     ;;
+    (define-key map "?" 'dcpu:ui-help)
+    ;;
     ;;(define-key map "g" 'dasm:)
     map))
 
@@ -56,7 +61,13 @@
   "")
 
 (define-minor-mode dcpu:ui 
-  "" ;; doc
+  "A global minor mode which controls the DCPU emulator and settings.
+\\<dcpu:ui-keymap>
+\\[dcpu:ui-run] runs the emulator. (Prefix arg is num of instrs)
+\\[dcpu:ui-toggle] toggles the window layout to the emulator and back.
+
+\\{dcpu:ui-keymap}
+" ;; doc
   :init-value t
   :global t
   :lighter " dcpu"
@@ -64,6 +75,12 @@
   (when dcpu:ui
     (message "dcpu:ui powerers activated!")))
 ;; (dcpu:ui t)
+
+(defun dcpu:ui-help ()
+  "Shows the help for dcpu:ui minor mode."
+  (interactive)
+  (describe-minor-mode 'dcpu:ui))
+;; (dcpu:ui-help)
 
 ;;;;;
 
@@ -154,7 +171,7 @@
     (if dcpu:ui-active
       (dcpu:ui-exit)
       (dcpu:ui-enter)))
-   ((equalp arg 0)
+   ((equal arg 0)
     (dcpu:ui-exit))
    ((numberp arg)
     (dcpu:ui-enter arg))
@@ -216,7 +233,7 @@
   (cond
    ((null arg)
     (setq dcpu:screen-color (not dcpu:screen-color)))
-   ((equalp 0 arg)
+   ((equal 0 arg)
     (setq dcpu:screen-color nil))
    ((numberp arg)
     (setq dcpu:screen-color t)))
