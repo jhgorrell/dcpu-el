@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.11 2012/04/18 07:41:00 harley Exp $
+;; $Id: dcpu-ui.el,v 1.12 2012/04/20 19:57:44 harley Exp $
 ;;
 
 (require 'dcpu-display)
@@ -125,9 +125,10 @@
 
 (defun dcpu:ui-enter (&optional arg)
   (interactive "P")
-  (setq dcpu:ui-window-orig-config (current-window-configuration))
+  (if (not dcpu:ui-active)
+    (setq dcpu:ui-window-orig-config (current-window-configuration)))
   (let ((buf (current-buffer)))
-    (if (or arg (not dcpu:ui-window-config))
+    (if (and (not arg) dcpu:ui-window-config)
       (dcpu:build-standard-ui arg)
       (set-window-configuration dcpu:ui-window-config))
     ;; keep the current buffer in the main window.
@@ -145,15 +146,20 @@
   (run-hooks dcpu:ui-exit-hook))
 
 (defun dcpu:ui-toggle (arg)
-  (interactive "p")
+  (interactive "P")
   (message "ui-toggle: %s" arg)
   (cond
-   ((equalp 1 arg)
+   ((null arg)
     (if dcpu:ui-active
       (dcpu:ui-exit)
       (dcpu:ui-enter)))
+   ((equalp arg 0)
+    (dcpu:ui-exit))
+   ((numberp arg)
+    (dcpu:ui-enter arg))
+   ;; what should we do with C-u?
    (t
-    (dcpu:ui-enter arg))))
+    (error ""))))
 ;; (dcpu:ui-toggle)
 
 (defun dcpu:ui-update ()
