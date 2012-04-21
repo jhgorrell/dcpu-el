@@ -1,10 +1,10 @@
 ;;
 ;; ~/0x10c/dcpu-el/test-typewriter.dasm ---
 ;;
-;; $Id: test-typewriter.dasm,v 1.3 2012/04/20 07:23:07 harley Exp $
+;; $Id: test-typewriter.dasm,v 1.4 2012/04/20 19:57:11 harley Exp $
 ;;
 ;; Might need to eval these lines with "C-x C-e":
-;;   (load "~/0x10c/dcpu-el/dcpu")
+;;   (load "~/0x10c/dcpu-el/dasm-mode")
 ;;   (dasm-mode)
 
 :start
@@ -17,9 +17,12 @@
 :loop_char
         ; wrap to start
         and     i,0x007f
+        ; draw the cursor
+        set     [0x9000+i],0x23 ; '#'
         set     a,0
         ; This is GETC, but "a16" doesnt have asm for it.
         word    0x0020 ; getc a
+        set     [0x9000+i],0x20 ; ' '
         ; no char read
         ife     a,0
           set     pc,loop_char
@@ -50,6 +53,7 @@
         ifn     a,0x0D ; ^M
           set     pc,LKEY_z
         jsr     do_nextline
+        jsr     do_startofline
         jsr     do_killline
         set     pc,loop_char
         word    0xffff
@@ -78,6 +82,7 @@
 :do_nextline
         jsr     do_startofline
         add     i,0x20
+        and     i,0x007f
         set     pc,pop
         word    0xffff
 
@@ -97,5 +102,3 @@
           set     pc,pop
         set     pc,do_killline_1
         word    0xffff
-
-;; (indent-buffer)
