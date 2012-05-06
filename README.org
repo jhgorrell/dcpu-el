@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.15 2012/05/03 04:07:24 harley Exp $
+#+TEXT:    $Id: README.org,v 1.16 2012/05/06 08:29:20 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -16,11 +16,15 @@
 :  Press "F11 F11" to toggle the UI; "F12" to single step.
 
 * Features
+  - v1.7 emulator
   - emacs font-lock mode for dasm assembly
-  - emulator
   - four pane display of register, memory, screen and source
   - single step and run to break
   - screen device (addr @ 0x8000; 32 wide 12 high)
+
+* Screenshot
+
+[[file:/jhgorrell/dcpu-el/raw/master/images/screen-1.png]]
 
 * Emulator Keybindings
 
