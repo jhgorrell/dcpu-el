@@ -11,9 +11,9 @@
 
 :  git clone https://github.com/jhgorrell/dcpu-el.git dcpu-el.git
 :  cd dcpu-el.git
-:  emacs test-hello-emacs.dasm
-:
-:  read "test-hello-emacs.dasm" for the keybindings.
+:  emacs dcpu-test.el
+:  M-x dcpu:test-hw-1
+:  Press "F11 F11" to toggle the UI; "F12" to single step.
 
 * Features
   - emacs font-lock mode for dasm assembly
@@ -21,6 +21,37 @@
   - four pane display of register, memory, screen and source
   - single step and run to break
   - screen device (addr @ 0x8000; 32 wide 12 high)
+
+* Emulator Keybindings
+
+: <f12>           dcpu:ui-run
+: 
+: <f11> 1         dcpu:ui-run-speed-1
+: <f11> 2         dcpu:ui-run-speed-2
+: <f11> 3         dcpu:ui-run-speed-3
+: <f11> ?         dcpu:ui-help
+: <f11> C         dcpu:ui-toggle-screen-color
+: <f11> R         dcpu:ui-cpu-reset
+: <f11> b         dcpu:ui-set-break
+: <f11> c         dcpu:ui-clear-break
+: <f11> l         dcpu:ui-load-mem
+: <f11> m         dcpu:ui-add-areg
+: <f11> s         dcpu:ui-save-mem
+: <f11> t         dcpu:trace-toggle
+: <f11> u         dcpu:ui-update
+: <f11> w         Prefix Command
+: <f11> <f11>     dcpu:ui-toggle
+: 
+: <f11> w 1       dcpu:ui-goto-reg-win
+: <f11> w 2       dcpu:ui-goto-mem-win
+: <f11> w 3       dcpu:ui-goto-screen-win
+: <f11> w 4       dcpu:ui-goto-main-win
+: <f11> w 5       dcpu:ui-goto-right-win
+: <f11> w m       dcpu:ui-goto-mem-win
+: <f11> w r       dcpu:ui-goto-reg-win
+: <f11> w s       dcpu:ui-goto-screen-win
+: <f11> w t       dcpu:ui-view-trace
+: <f11> w w       dcpu:ui-goto-main-win
 
 * Todo
   - Checkpoint save/load
