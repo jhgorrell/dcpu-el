@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.18 2012/05/06 18:26:26 harley Exp $
+#+TEXT:    $Id: README.org,v 1.19 2012/05/06 19:26:48 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -35,17 +35,22 @@
 : <f11> 2         dcpu:ui-run-speed-2
 : <f11> 3         dcpu:ui-run-speed-3
 : <f11> ?         dcpu:ui-help
-: <f11> C         dcpu:ui-toggle-screen-color
+: <f11> B         dcpu:ui-clear-break
 : <f11> R         dcpu:ui-cpu-reset
 : <f11> b         dcpu:ui-set-break
-: <f11> c         dcpu:ui-clear-break
-: <f11> l         dcpu:ui-load-mem
+: <f11> c         Prefix Command
 : <f11> m         dcpu:ui-add-areg
-: <f11> s         dcpu:ui-save-mem
+: <f11> s         Prefix Command
 : <f11> t         dcpu:trace-toggle
 : <f11> u         dcpu:ui-update
 : <f11> w         Prefix Command
 : <f11> <f11>     dcpu:ui-toggle
+: 
+: <f11> c a       dcpu:ui-checkpoint-auto
+: <f11> c l       dcpu:ui-checkpoint-load
+: <f11> c s       dcpu:ui-checkpoint-save
+: 
+: <f11> s c       dcpu:ui-toggle-screen-color
 : 
 : <f11> w 1       dcpu:ui-goto-reg-win
 : <f11> w 2       dcpu:ui-goto-mem-win
@@ -59,16 +64,11 @@
 : <f11> w w       dcpu:ui-goto-main-win
 
 * Todo
-  - Checkpoint save/load
-  - Save/restore window ui config / different window configs in regs
-  - wide window split in half
   - special "dcpu-checkpoint a" instr in the emulator
   - check cycle counts
   - instr freq count/profiler
   - disassemble other data structures (strings,code,...)
   - relative labels in disassembly
-  - update to latest spec
-  - cache font colors
   - charset
   - interrupts
   - keyboard @ 0x7FFF
