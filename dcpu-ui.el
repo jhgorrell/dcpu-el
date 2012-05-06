@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.24 2012/05/06 10:05:25 harley Exp $
+;; $Id: dcpu-ui.el,v 1.25 2012/05/06 18:26:26 harley Exp $
 ;;
 
 (eval-when-compile
@@ -39,8 +39,8 @@
     ;;
     (define-key map "R" 'dcpu:ui-cpu-reset)
     ;;
-    (define-key map "l" 'dcpu:ui-load-mem)
-    (define-key map "s" 'dcpu:ui-save-mem)
+    ;;(define-key map "l" 'dcpu:ui-load-mem)
+    ;;(define-key map "s" 'dcpu:ui-save-mem)
     ;;
     (define-key map "w1" 'dcpu:ui-goto-reg-win)
     (define-key map "w2" 'dcpu:ui-goto-mem-win)
@@ -53,8 +53,6 @@
     (define-key map "wt" 'dcpu:ui-view-trace)
     (define-key map "ww" 'dcpu:ui-goto-main-win)
     ;;
-    (define-key map "b" 'dcpu:ui-set-break)
-    (define-key map "c" 'dcpu:ui-clear-break)
     (define-key map "m" 'dcpu:ui-add-areg)
     (define-key map "u" 'dcpu:ui-update)
     ;;
@@ -67,7 +65,11 @@
     (define-key map "B" 'dcpu:ui-clear-break)
     (define-key map "b" 'dcpu:ui-set-break)
     ;;
-    (define-key map "C" 'dcpu:ui-toggle-screen-color)
+    (define-key map "ca" 'dcpu:ui-checkpoint-auto)
+    (define-key map "cl" 'dcpu:ui-checkpoint-load)
+    (define-key map "cs" 'dcpu:ui-checkpoint-save)
+    ;;
+    (define-key map "sc" 'dcpu:ui-toggle-screen-color)
     ;;
     (define-key map "?" 'dcpu:ui-help)
     ;;
@@ -142,6 +144,51 @@
       (dcpu:aregionlist-push 'dcpu:display-areg-list areg)))
   nil)
 
+;;;;;
+
+(defvar dcpu:ui-checkpoint-history nil)
+
+(defun dcpu:ui-checkpoint-auto (name)
+  (interactive "sName of auto checkpoint: ")
+  (cond
+   ((string= name "")
+    (setq dcpu:auto-checkpoint-name nil))
+   (t
+    (dcpu:checkpoint-save name)
+    (add-to-history 'dcpu:ui-checkpoint-history name)
+    (setq dcpu:auto-checkpoint-name name))))
+
+(defun dcpu:ui-checkpoint-save (&optional arg)
+  (interactive "P")
+  (if (not (stringp arg))
+    (setq arg (format "%s" arg)))
+  (if (not arg)
+    (setq arg (read-string 
+               "dcpu: save checkpoint to: "
+               nil
+               'dcpu:ui-checkpoint-history))
+    (add-to-history 'dcpu:ui-checkpoint-history arg))
+  ;;
+  (dcpu:checkpoint-save arg)
+  (message "dcpu: checkpoint saved to '%s'" arg)
+  arg)
+;; (dcpu:ui-checkpoint-save)
+
+(defun dcpu:ui-checkpoint-load (&optional arg)
+  (interactive "P")
+  (if (not arg)
+    (setq arg (read-string
+               "dcpu: load checkpoint from: "
+               nil
+               'dcpu:ui-checkpoint-history)))
+  (if (not (stringp arg))
+    (setq arg (format "%s" arg)))
+  ;;
+  (dcpu:checkpoint-load arg)
+  (dcpu:ui-update)
+  arg)
+;; (dcpu:ui-checkpoint-load)
+  
 ;;;;;
 
 (defun dcpu:ui-select-window (win)

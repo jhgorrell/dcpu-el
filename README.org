@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.17 2012/05/06 10:05:25 harley Exp $
+#+TEXT:    $Id: README.org,v 1.18 2012/05/06 18:26:26 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -21,6 +21,7 @@
   - four pane display of register, memory, screen and source
   - single step and run to break
   - screen device (addr @ 0x8000; 32 wide 12 high)
+  - Checkpoint save and restore - jump back to prior cpu states!
 
 * Screenshot
 

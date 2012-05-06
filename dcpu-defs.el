@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.24 2012/05/06 10:05:25 harley Exp $
+;; $Id: dcpu-defs.el,v 1.25 2012/05/06 18:26:26 harley Exp $
 ;;
 
 (eval-when-compile
@@ -11,18 +11,7 @@
 
 (defvar dcpu:mem-size #x10000)
 
-(defvar dcpu:state-list
-  '(a b c x y z i j ;; user
-      ex pc sp ;;
-      state-skip
-      state-onfire
-      mem
-      ))
-
-;; the memory
-(defvar dcpu:mem-vec nil)
-
-;; the registers
+;; the cpu registers & state
 (defvar dcpu:a    0)
 (defvar dcpu:b    0)
 (defvar dcpu:c    0)
@@ -35,6 +24,10 @@
 (defvar dcpu:sp   0)
 (defvar dcpu:pc   0)
 (defvar dcpu:ia   0)
+;;
+(defvar dcpu:mem-vec nil)
+(defvar dcpu:dev-vec nil)
+;;
 (defvar dcpu:state-breakpoints (make-hash-table))
 (defvar dcpu:state-breaks   nil)
 (defvar dcpu:state-cycles   0)
@@ -43,11 +36,31 @@
 (defvar dcpu:state-onfire   nil)
 (defvar dcpu:state-skip     nil)
 
+;;
+(defvar dcpu:auto-checkpoint-name nil)
+(defvar dcpu:checkpoint-vars
+  '(dcpu:a dcpu:b dcpu:c
+    dcpu:x dcpu:y dcpu:z
+    dcpu:i dcpu:j
+    dcpu:ex dcpu:sp dcpu:pc
+    dcpu:ia
+    dcpu:mem-vec
+    dcpu:dev-vec
+    dcpu:state-breakpoints
+    dcpu:state-breaks
+    dcpu:state-cycles
+    dcpu:state-icount
+    dcpu:state-iqueue
+    dcpu:state-onfire
+    dcpu:state-skip))
+
+(defvar dcpu:checkpoints (make-hash-table :test 'equal))
+
+;;;;;
+
 (defvar dcpu:run-until-icount nil)
 (defvar dcpu:run-until-cycles nil)
 (defvar dcpu:run-sit-for      nil)
-
-;;;;;
 
 (defvar dcpu:cur-instr   nil)
 (defvar dcpu:cur-op      nil)

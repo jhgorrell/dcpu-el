@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.27 2012/05/06 10:05:25 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.28 2012/05/06 18:26:26 harley Exp $
 ;;
 
 (eval-when-compile
@@ -70,6 +70,49 @@
     addr))
 ;; (dcpu:init-cpu)
 ;; (dcpu:mem-set-list 0 '(0 1 2 3))
+
+;;;;;
+
+(defun dcpu:checkpoint-val-copy (val)
+  (cond
+   ((listp val)
+    (copy-tree val))
+   ((vectorp val)
+    (copy-sequence val))
+   ((hash-table-p val)
+    (copy-hash-table val))
+   (t
+    val)))
+
+(defun dcpu:checkpoint-var-copy (sym)
+  (list sym (dcpu:checkpoint-val-copy (symbol-value sym))))
+;; (dcpu:checkpoint-var 'dcpu:a)
+
+(defun dcpu:checkpoint-make ()
+  (mapcar 'dcpu:checkpoint-var-copy dcpu:checkpoint-vars))
+;; (dcpu:checkpoint-make)
+
+(defun dcpu:checkpoint-save (name)
+  (puthash name (dcpu:checkpoint-make) dcpu:checkpoints)
+  name)
+;; (dcpu:checkpoint-save "aaa")
+
+(defun dcpu:checkpoint-get (name)
+  (gethash name dcpu:checkpoints))
+;; (dcpu:checkpoint-get "aaa")
+;; (dcpu:checkpoint-get "30")
+
+(defun dcpu:checkpoint-load (name)
+  (let ((varval-lst (dcpu:checkpoint-get name)))
+    (if (not varval-lst)
+      (error "Null checkpoint"))
+    (mapcar
+     (lambda (varval)
+       (set (car varval) (dcpu:checkpoint-val-copy (cadr varval))))
+     varval-lst))
+  name)
+;; (dcpu:checkpoint-load "aaa")
+;; (dcpu:checkpoint-load "30")
 
 ;;;;;
 
@@ -397,8 +440,13 @@
           (+ dcpu:state-cycles num-cycles)
           nil))
 
+  ;; make a checkpoint at the start of a loop
+  (when dcpu:auto-checkpoint-name
+    (dcpu:checkpoint-save dcpu:auto-checkpoint-name))
+
   ;; clear our running breaks
   (dcpu:breaks-clear)
+
   ;;
   (run-hooks dcpu:run-start-hook)
 
