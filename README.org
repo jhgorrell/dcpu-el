@@ -24,7 +24,7 @@
 
 * Screenshot
 
-[[file:/jhgorrell/dcpu-el/raw/master/images/screen-1.png]]
+[[http://github.com/jhgorrell/dcpu-el/raw/master/images/screen-1.png]]
 
 * Emulator Keybindings
 
