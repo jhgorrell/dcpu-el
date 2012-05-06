@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.26 2012/05/06 05:22:18 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.27 2012/05/06 10:05:25 harley Exp $
 ;;
 
 (eval-when-compile
@@ -154,6 +154,18 @@
   (if c
     (dcpu:break-set b)))
 ;; (dcpu:break-set-if t 'true)
+
+;;;;;;;;;;
+
+(defun dcpu:breakpoint-set (addr)
+  (puthash addr t dcpu:state-breakpoints))
+
+(defun dcpu:breakpoint-clear (addr)
+  (remhash addr dcpu:state-breakpoints))
+
+(defun dcpu:breakpoint-clear-all ()
+  (interactive)
+  (clrhash dcpu:state-breakpoints))
 
 ;;;;;;;;;;
 
@@ -439,6 +451,10 @@
              (if dcpu:dst-val
                (format "=#x%04x (%s)" dcpu:dst-val dcpu:dst-val)
                "")))
+
+          ;;
+          (if (gethash dcpu:pc dcpu:state-breakpoints)
+            (dcpu:break-set 'break))
 
           ;; commit our pc
           ;; @todo better unwind

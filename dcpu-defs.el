@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.23 2012/05/06 05:22:18 harley Exp $
+;; $Id: dcpu-defs.el,v 1.24 2012/05/06 10:05:25 harley Exp $
 ;;
 
 (eval-when-compile
@@ -35,6 +35,7 @@
 (defvar dcpu:sp   0)
 (defvar dcpu:pc   0)
 (defvar dcpu:ia   0)
+(defvar dcpu:state-breakpoints (make-hash-table))
 (defvar dcpu:state-breaks   nil)
 (defvar dcpu:state-cycles   0)
 (defvar dcpu:state-icount   0)

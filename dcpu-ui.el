@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.23 2012/05/06 05:22:18 harley Exp $
+;; $Id: dcpu-ui.el,v 1.24 2012/05/06 10:05:25 harley Exp $
 ;;
 
 (eval-when-compile
@@ -64,11 +64,13 @@
     ;;
     (define-key map "t" 'dcpu:trace-toggle)
     ;;
+    (define-key map "B" 'dcpu:ui-clear-break)
+    (define-key map "b" 'dcpu:ui-set-break)
+    ;;
     (define-key map "C" 'dcpu:ui-toggle-screen-color)
     ;;
     (define-key map "?" 'dcpu:ui-help)
     ;;
-    ;;(define-key map "g" 'dasm:)
     map))
 
 (defvar dcpu:ui-keymap
@@ -102,16 +104,32 @@
 
 ;;;;;
 
+(defun dcpu:ui-prompt-for-addr (prompt &optional addr)
+  (if addr
+    (setq prompt (concat prompt (format "(default: #x%04x): " addr))))
+  (let ((str (read-string prompt)))
+    (cond
+     ((string= str "")
+      addr)
+     (t
+      (string-to-number str 16)))))
+;; (dcpu:ui-prompt-for-addr "foo")
+;; (dcpu:ui-prompt-for-addr "foo" #xFF)
+
 (defun dcpu:ui-set-break ()
   (interactive)
-  (let ((addr (read-number "dcpu: set breakpoint addr: " (or dcpu:pc 0))))
-    (message "dcpu: breakpoint: %s" addr)
-    (dcpu:set-breakpoint-addrs addr)))
+  (let ((addr (dcpu:ui-prompt-for-addr "dcpu: Set breakpoint: " dcpu:pc)))
+    (message "dcpu: breakpoint at #x%04x" addr)
+    (dcpu:breakpoint-set addr)
+    (dcpu:ui-update)))
+;; (dcpu:ui-set-break)
 
 (defun dcpu:ui-clear-break ()
   (interactive)
-  (let ((addr (read-number "dcpu: clear breakpoint addr: " (or dcpu:pc 0))))
-    (dcpu:clear-breakpoint-addrs addr)))
+  (let ((addr (dcpu:ui-prompt-for-addr "dcpu: Clear breakpoint: " dcpu:pc)))
+    (message "dcpu: breakpoint clear #x%04x" addr)
+    (dcpu:breakpoint-clear addr)
+    (dcpu:ui-update)))
 
 (defvar dcpu:ui-add-mem-list-len 32)
 

@@ -1,8 +1,11 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-opcode-list.el ---
 ;;
-;; $Id: dcpu-opcode-list.el,v 1.3 2012/05/04 08:30:06 harley Exp $
+;; $Id: dcpu-opcode-list.el,v 1.4 2012/05/06 08:31:18 harley Exp $
 ;;
+
+;; load this before editing defopcode forms.
+;; (require 'dcpu-elisp)
 
 (require 'dcpu-opcode-func)
 
@@ -243,56 +246,64 @@
   :opcode #x10
   :cycles 2
   (if (= 0 (logand dcpu:valB dcpu:valA))
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x11 | IFC b, a | performs next instruction only if (b&a)==0
 (dcpu:defopcode ifc
   :opcode #x11
   :cycles 2
   (if (/= 0 (logand dcpu:valB dcpu:valA))
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x12 | IFE b, a | performs next instruction only if b==a
 (dcpu:defopcode ife
   :opcode #x12
   :cycles 2
   (if (/= dcpu:valB dcpu:valA)
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x13 | IFN b, a | performs next instruction only if b!=a
 (dcpu:defopcode ifn
   :opcode #x13
   :cycles 2
   (if (= 0 (logand dcpu:valB dcpu:valA))
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x14 | IFG b, a | performs next instruction only if b>a
 (dcpu:defopcode ifg
   :opcode #x14
   :cycles 2
   (if (<= dcpu:valB dcpu:valA)
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x15 | IFA b, a | performs next instruction only if b>a (signed)
 (dcpu:defopcode ifa
   :opcode #x15
   :cycles 2
   (if (<= (dcpu:sext dcpu:valB) (dcpu:sext dcpu:valA))
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x16 | IFL b, a | performs next instruction only if b<a
 (dcpu:defopcode ifl
   :opcode #x16
   :cycles 2
   (if (<= dcpu:valA dcpu:valB)
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  2+| 0x17 | IFU b, a | performs next instruction only if b<a (signed)
 (dcpu:defopcode ifu
   :opcode #x17
   :cycles 2
   (if (<= (dcpu:sext dcpu:valA) (dcpu:sext dcpu:valB))
-    (setq dcpu:state-skip t)))
+    (setq dcpu:state-skip t)
+    (incf dcpu:state-cycles)))
 
 ;;  3 | 0x1a | ADX b, a | sets b to b+a+EX, sets EX to 0x0001 if there is an over-
 ;;    |      |          | flow, 0x0 otherwise

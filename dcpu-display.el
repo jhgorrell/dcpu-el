@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.26 2012/05/06 05:22:18 harley Exp $
+;; $Id: dcpu-display.el,v 1.27 2012/05/06 10:05:25 harley Exp $
 ;;
 
 (eval-when-compile
@@ -37,7 +37,11 @@
    ((equal addr dcpu:pc)
     (setf txt (propertize txt 'face 'dcpu:pc)))
    ((equal addr dcpu:sp)
-    (setf txt (propertize txt 'face 'dcpu:sp))))
+    (setf txt (propertize txt 'face 'dcpu:sp)))
+   ((gethash addr dcpu:state-breakpoints)
+    (setf txt (propertize txt 'face 'dcpu:breakpoint)))
+   (t
+    nil))
   txt)
 
 ;;;;;
@@ -288,7 +292,7 @@
     (setq dcpu:trace t)))
   ;;
   (if (called-interactively-p 'interactive)
-    (message 
+    (message
      "dcpu:trace is %s"
      (if dcpu:trace
        "on"
