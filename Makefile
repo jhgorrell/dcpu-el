@@ -1,17 +1,24 @@
 #
 # ~/projects/games/0x10c/dcpu-el/Makefile ---
 #
-# $Id: Makefile,v 1.8 2012/04/21 21:54:31 harley Exp $
+# $Id: Makefile,v 1.13 2012/05/04 08:14:35 harley Exp $
 #
 
-# export JHG_CLOAD_ENABLE=0
+# export JHG_CLOAD_ENABLED=0
 
-_default: _all
+_default: _elc
 
-EL_FILES:=$(wildcard  dasm*.el dcpu*.el elex*.el)
+##########
+
+# stuff for just me.
+include $(wildcard Makefile.jhg)
+
+##########
+
+EL_FILES:=$(wildcard dasm*.el dcpu*.el elex*.el)
 ELC_FILES=${EL_FILES:%.el=%.elc}
 
-dcpu-autoloads.el: ${EL_FILES}
+dcpu-autoloads.el: $(filter-out dcpu-autoloads.el,${EL_FILES}) Makefile
 	-rm -f ${@}
 	emacs --batch -L . -l 'dcpu.el' -f 'dcpu:generate-autoloads'
 
@@ -39,14 +46,6 @@ _README.html: README.html
 
 ##########
 
-# git setup
-# git remote add origin git@github.com:jhgorrell/dcpu-el.git
-
-_github_push:
-	git push -u origin master
-
-##########
-
 A16_EXE:=dcpu16.git/a16
 
 dcpu16.git:
@@ -65,3 +64,5 @@ ${A16_EXE}: | dcpu16.git
 
 ##########
 
+_line_cnt:
+	wc *.el

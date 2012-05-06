@@ -1,62 +1,83 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.13 2012/04/21 21:54:31 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.26 2012/05/06 05:22:18 harley Exp $
 ;;
-
-(require 'dcpu-util)
-(require 'dcpu-defs)
-
-(require 'cl) ;; find & position
 
 (eval-when-compile
   (require 'cl))
 
+(require 'dcpu-defs)
+(require 'dcpu-util)
+(require 'dcpu-opcode-list)
+
 ;;;;;
 
-;;;#autoload
-(defun dcpu:cpu-init (cpu)
-  (setf
-   (dcpu:cpu-dev-vec cpu) (make-vector dcpu:dev-vec-size nil)
-   (dcpu:cpu-mem-vec cpu) (make-vector dcpu:mem-vec-size 0)
-   (dcpu:cpu-reg-vec cpu) (make-vector dcpu:reg-vec-size 0))
-  (let ((dcpu:reg-vec (dcpu:cpu-reg-vec cpu)))
-    (dcpu:set-reg 'skip nil)
-    nil)
-  cpu)
-
-;;;#autoload
-(defun dcpu:new-cpu ()
-  (dcpu:cpu-init (dcpu:make-cpu)))
-;; (dcpu:new-cpu)
-
-(defun dcpu:activate-cpu (cpu)
-  (setf
-   dcpu:cur-cpu cpu
-   dcpu:dev-vec (dcpu:cpu-dev-vec cpu)
-   dcpu:mem-vec (dcpu:cpu-mem-vec cpu)
-   dcpu:reg-vec (dcpu:cpu-reg-vec cpu))
-  ;;cpu)
-  nil)
-
-;;;#autoload
-(defun dcpu:ensure-active-cpu ()
-  (when (not dcpu:cur-cpu)
-    (dcpu:activate-cpu (dcpu:new-cpu))))
-;; (dcpu:ensure-active-cpu)
-
-(defun dcpu:reset ()
-  "Reset all the registers to 0."
+(defun dcpu:init-regs ()
   (interactive)
-  (fillarray dcpu:reg-vec 0))
+  (setf dcpu:a  0
+        dcpu:b  0
+        dcpu:c  0
+        dcpu:x  0
+        dcpu:y  0
+        dcpu:z  0
+        dcpu:i  0
+        dcpu:j  0
+        dcpu:ex 0
+        dcpu:pc 0
+        dcpu:sp 0
+        dcpu:state-cycles 0
+        dcpu:state-icount 0
+        dcpu:state-onfire nil
+        dcpu:state-skip   nil
+        ))
 
-;;;;;;;;;;
+(defun dcpu:init-cpu ()
+  (interactive)
+  (setq dcpu:mem-vec (make-vector dcpu:mem-size 0))
+  (dcpu:init-regs)
+  (dcpu:breaks-clear)
+  nil)
+;; (dcpu:init-cpu)
+
+(defun dcpu:mem-get (addr)
+  (elt dcpu:mem-vec addr))
+;; (dcpu:mem-get 0)
+
+(defun dcpu:mem-set (addr val)
+  (setf (elt dcpu:mem-vec addr) val))
+;; (dcpu:mem-set 0 #xFFFF)
+;; (dcpu:mem-set #xFFFF 1)
+
+(defun dcpu:mem-set-bulk (addr &rest args)
+  (apply 'dcpu:mem-set-list addr args))
+
+(defun dcpu:mem-set-list (addr args)
+  (let (arg)
+    (while args
+      (setq arg  (car args)
+            args (cdr args))
+      (cond
+       ((numberp arg)
+        (setf (elt dcpu:mem-vec addr) arg)
+        (incf addr))
+       ((stringp arg)
+        (dotimes (i (length arg))
+          (setf (elt dcpu:mem-vec addr) (elt arg i))
+          (incf addr)))
+       (t
+        (error "dcpu:mem-set-bulk"))))
+    addr))
+;; (dcpu:init-cpu)
+;; (dcpu:mem-set-list 0 '(0 1 2 3))
+
+;;;;;
 
 ;;;#autoload
 (defun dcpu:load-from-file (path)
   (when (not (file-readable-p path))
     (error "file is not readable"))
-  (let ((buf (get-buffer-create "*dcpu load mem*")))
+  (let ((buf (get-buffer-create dcpu:load-mem-bufname)))
     (with-current-buffer buf
       (erase-buffer)
       (insert-file-contents path nil)
@@ -67,7 +88,6 @@
   (dcpu:load-from-buffer-bin buf))
 
 (defun dcpu:load-from-buffer-bin (buf)
-  (dcpu:ensure-active-cpu)
   (with-current-buffer buf
     (goto-char (point-min))
     (let ((addr 0) word)
@@ -88,7 +108,7 @@
             nil)
            ((looking-at "\\([0-9a-fA-F]+\\)")
             (setq word (string-to-number (match-string-no-properties 0) 16))
-            (dcpu:set-mem addr word)
+            (dcpu:mem-set addr word)
             (setf addr (dcpu:u16+ 1 addr)))
            (t
             (throw 'break nil)))
@@ -96,427 +116,351 @@
           (goto-char (match-end 0)))))))
 ;; (dcpu:load-from-file "../programs/test-1.bin")
 
+;;;;;
+
+(defun dcpu:sp-push (val)
+  (setf dcpu:sp (dcpu:u16 (1- dcpu:sp)))
+  (dcpu:mem-set dcpu:sp val))
+
+(defun dcpu:sp-pop ()
+  (prog1
+      (dcpu:mem-get dcpu:sp)
+    (setf dcpu:sp (dcpu:u16 (1+ dcpu:sp)))))
+
+(defun dcpu:sp-peek (&optional off)
+  (let ((addr (dcpu:u16 (+ dcpu:sp (or off 0)))))
+    (dcpu:mem-get addr)))
+
+;; (progn (dcpu:sp-push #x5555) (dcpu:sp-peek) (dcpu:sp-pop))
+
+(defun dcpu:pc-next-word ()
+  (prog1
+      (dcpu:mem-get dcpu:pc)
+    (setf dcpu:pc (dcpu:u16 (1+ dcpu:pc)))))
+;; (dcpu:pc-next-word) dcpu:pc
+
 ;;;;;;;;;;
 
-(defun dcpu:screen-xy2addr (x y)
-  (+ dcpu:screen-addr (* y dcpu:screen-x) x))
-;; (dcpu:screen-xy2addr 0 0)
-;; (dcpu:screen-xy2addr 0 1)
+(defun dcpu:breaks-clear ()
+  (setf dcpu:state-breaks nil))
+;; (dcpu:breaks-clear)
+
+(defun dcpu:break-set (b)
+  (when b
+    (push b dcpu:state-breaks)))
+;; (dcpu:break-set 'on-fire)
+
+(defun dcpu:break-set-if (c b)
+  (if c
+    (dcpu:break-set b)))
+;; (dcpu:break-set-if t 'true)
 
 ;;;;;;;;;;
 
-(defun dcpu:get-mem (addr)
-  (elt dcpu:mem-vec addr))
-;; (dcpu:get-mem 0)
-
-(defun dcpu:set-mem (addr val)
-  ;;(assert dcpu:mem-vec)
-  (setf (elt dcpu:mem-vec addr) val))
-
-(defun dcpu:set-mem-bulk (addr &rest args)
-  (let ((arg))
-    (while args
-      (setq arg (car args)
-            args (cdr args))
-      (cond
-       ((numberp arg)
-        (setf (elt dcpu:mem-vec addr) arg)
-        (incf addr))
-       ((stringp arg)
-        (dotimes (i (length arg))
-          (setf 
-           (elt dcpu:mem-vec addr) (elt arg i)
-           addr (1+ addr))))
-       (t
-        (error ""))))))
-
-;; *sigh* diff order of args than "memset", but better sense.
-(defun dcpu:memset (addr len val)
-  (dotimes (i len)
-    (setf (elt (elt dcpu:mem-vec addr) val))
-    (setq addr (1+ addr))))
-
-(defun dcpu:mem-clear ()
-  (dcpu:memset 0 #xFFFF 0))
-
-;; @todo macroize
-(defun dcpu:get-reg (reg)
-  (if (symbolp reg)
-    (setf reg (position reg dcpu:reg-names)))
-  (if (and (numberp reg) (<= 0 reg) (< reg dcpu:reg-vec-size))
-    (elt dcpu:reg-vec reg)
-    (error "bad reg")))
-;; (dcpu:get-reg 'A)
-;; (dcpu:get-reg 'PC)
-
-;; @todo macrofiy for fixed args
-(defun dcpu:set-reg (reg val)
-  ;;(assert dcpu:reg-vec)
-  (if (symbolp reg)
-    (setf reg (position reg dcpu:reg-names)))
-  (if (and (numberp reg) (<= 0 reg) (< reg dcpu:reg-vec-size))
-    (setf (elt dcpu:reg-vec reg) val)
-    (error "bad reg")))
-;; (dcpu:set-reg 'A 4)
-
-(defun dcpu:reg2idx (reg)
+(defun dcpu:reg-get (idx)
   (cond
-   ((and (numberp reg) (< reg dcpu:reg-vec-size))
-    reg)
-   ((position reg dcpu:reg-names)
-    (position reg dcpu:reg-names))
-   (t
-    (error ""))))
-;; (dcpu:reg2idx 'PC)
-;; (dcpu:reg2idx 100)
-
-(defun dcpu:instr-len-arg (arg)
-  (cond
-   ;; reg & [reg]
-   ((<= arg #x0f) 0)
-   ;; [pc++ + reg]
-   ((<= arg #x17) 1)
-   ;; pop, peek, push, sp, pc, o
-   ((<= arg #x1d) 0)
-   ;; [word],word
-   ((<= arg #x1f) 1)
-   ;; lit
-   ((<= arg #x3f) 0)
-   (t
-    (error ""))))
-;; (dcpu:instr-len-arg 0)
-;; (dcpu:instr-len-arg #x10)
-
-(defun dcpu:instr-len (instr)
-  (let ((op (dcpu:extract-op instr)))
-    (+ 1
-       (dcpu:instr-len-arg (dcpu:extract-rb instr))
-       (if (< 0 op)
-         (dcpu:instr-len-arg (dcpu:extract-ra instr))
-         0))))
-;; (dcpu:instr-len #xC00D)
-;; (dcpu:instr-len #x7c01)
-;; (dcpu:instr-len #x7de1)
-
-;; expects dcpu:pc and dcpu:sp to be correct.
-(defun dcpu:get-rx-val (rx)
-  (cond
-   ;; A
-   ((<= rx #x07)
-    (setf dcpu:dst-reg rx)
-    (elt dcpu:reg-vec rx))
-   ;; [A]
-   ((<= rx #x0F)
-    (incf dcpu:cycles)
-    (setq dcpu:dst-addr (elt dcpu:reg-vec (- rx #x08)))
-    (dcpu:get-mem dcpu:dst-addr))
-   ;; [index+A]
-   ((<= rx #x17)
-    (incf dcpu:cycles)
-    (setq dcpu:dst-addr (+ (dcpu:get-mem dcpu:pc) (elt dcpu:reg-vec (- rx #x10))))
-    (setq dcpu:pc (dcpu:u16+ dcpu:pc 1))
-    (dcpu:get-mem dcpu:dst-addr))
-   ;; POP / [SP++]
-   ((= rx #x18)
-    (setq dcpu:dst-addr dcpu:sp)
-    (setq dcpu:sp (dcpu:u16+ dcpu:sp 1))
-    (incf dcpu:cycles)
-    (dcpu:get-mem dcpu:dst-addr))
-   ;; PEEK / [SP]
-   ((= rx  #x19)
-    (incf dcpu:cycles)
-    (setq dcpu:dst-addr dcpu:sp)
-    (dcpu:get-mem dcpu:sp))
-   ;; PUSH / [--SP]
-   ((= rx  #x1a)
-    (incf dcpu:cycles)
-    (setq dcpu:sp (dcpu:u16+ dcpu:sp -1))
-    (setq dcpu:dst-addr dcpu:sp)
-    (dcpu:get-mem dcpu:dst-addr))
-   ;; SP
-   ((= rx #x1b)
-    (setq dcpu:dst-reg (dcpu:reg2idx 'SP))
-    dcpu:sp)
-   ;; PC
-   ((= rx #x1c)
-    (setq dcpu:dst-reg (dcpu:reg2idx 'PC))
+   ((= idx 0)
+    dcpu:a)
+   ((= idx 1)
+    dcpu:b)
+   ((= idx 2)
+    dcpu:c)
+   ((= idx 3)
+    dcpu:x)
+   ((= idx 4)
+    dcpu:y)
+   ((= idx 5)
+    dcpu:z)
+   ((= idx 6)
+    dcpu:i)
+   ((= idx 7)
+    dcpu:j)
+   ;;
+   ((= idx 8)
+    dcpu:ex)
+   ((= idx 9)
     dcpu:pc)
-   ;; O
-   ((= rx #x1d)
-    (setq dcpu:dst-reg (dcpu:reg2idx 'O))
-    (dcpu:get-reg 'O))
-   ;; [next word]
-   ((= rx #x1e)
-    (incf dcpu:cycles 2)
-    (setq dcpu:dst-addr dcpu:pc)
-    (setq dcpu:pc (dcpu:u16+ dcpu:pc 1))
-    (setq dcpu:dst-addr (dcpu:get-mem dcpu:dst-addr))
-    (dcpu:get-mem dcpu:dst-addr))
-   ;; LIT ; =>
-   ((= rx #x1f)
-    (incf dcpu:cycles)
-    (setq dcpu:addr dcpu:pc)
-    (setq dcpu:pc (dcpu:u16+ dcpu:pc 1))
-    (dcpu:get-mem dcpu:addr))
-   ;; Immedate
-   ((<= rx #x3f)
-    (- rx #x20))
+   ((= idx 10)
+    dcpu:sp)
    (t
-    (error ""))))
+    (error "dcpu:reg-get out of range"))))
+;; (dotimes (i 8) (dcpu:reg-get i))
+
+(defun dcpu:reg-set (idx val)
+  (cond
+   ((= idx 0)
+    (setf dcpu:a val))
+   ((= idx 1)
+    (setf dcpu:b val))
+   ((= idx 2)
+    (setf dcpu:c val))
+   ((= idx 3)
+    (setf dcpu:x val))
+   ((= idx 4)
+    (setf dcpu:y val))
+   ((= idx 5)
+    (setf dcpu:z val))
+   ((= idx 6)
+    (setf dcpu:i val))
+   ((= idx 7)
+    (setf dcpu:j val))
+   ;;
+   ((= idx 8)
+    (setf dcpu:ex val))
+   ((= idx 9)
+    (setf dcpu:pc val))
+   ((= idx 10)
+    (setf dcpu:sp val))
+   (t
+    (error "dcpu:reg-set"))))
+;; (dcpu:reg-set 0 #xAAAA)
+;; (progn (dotimes (i 8) (dcpu:reg-set i #xFFFF)) dcpu:j)
+
+(defun dcpu:dst-set (val)
+  (setq dcpu:dst-val val)
+  (if dcpu:dst-reg
+    (dcpu:reg-set dcpu:dst-reg val))
+  (if dcpu:dst-addr
+    (dcpu:mem-set dcpu:dst-addr val)))
 
 ;;;;;
 
-(defun dcpu:set-break (do-break &optional why)
-  (when do-break
-    (push (or why 'unknown) dcpu:break)))
+(defun dcpu:instr-val-ra (rx)
+  (setq
+   dcpu:valA
+   (cond
+    ;; a,b,c,x,y,z,i,j
+    ((<= rx #x07)
+     (dcpu:reg-get rx))
+    ;; [A]
+    ((<= rx #x0F)
+     (dcpu:mem-get (dcpu:reg-get (- rx #x08))))
+    ;; [index+A]
+    ((<= rx #x17)
+     (incf dcpu:state-cycles)
+     (setq dcpu:tmp-addr (+ (dcpu:reg-get (- rx #x10)) (dcpu:pc-next-word)))
+     (dcpu:mem-get dcpu:tmp-addr))
+    ;; POP
+    ((= rx #x18)
+     (dcpu:sp-pop))
+    ;; PEEK / [SP]
+    ((= rx  #x19)
+     (dcpu:sp-peek))
+    ;; PICK / [SP + i]
+    ((= rx  #x1a)
+     (incf dcpu:state-cycles)
+     (setq dcpu:tmp-addr (dcpu:u16+ dcpu:sp (dcpu:pc-next-word)))
+     (dcpu:mem-get dcpu:tmp-addr))
+    ;; SP
+    ((= rx #x1b)
+     dcpu:sp)
+    ;; PC
+    ((= rx #x1c)
+     dcpu:pc)
+    ;; EX
+    ((= rx #x1d)
+     dcpu:ex)
+    ;; [next word]
+    ((= rx #x1e)
+     (incf dcpu:state-cycles 1)
+     (setq dcpu:tmp-addr (dcpu:pc-next-word))
+     (dcpu:mem-get dcpu:tmp-addr))
+    ;; LIT ; =>
+    ((= rx #x1f)
+     (incf dcpu:state-cycles 1)
+     (dcpu:pc-next-word))
+    ;; Immediate (-1 ... 30)
+    ((<= rx #x3f)
+     (- rx #x21))
+    (t
+     (error "dcpu:instr-val-ra")))))
 
-(defun dcpu:clear-break ()
-  (setf dcpu:break nil))
+(defun dcpu:instr-val-rb (rx)
+  (setq
+   dcpu:valB
+   (cond
+    ;; a,b,c,x,y,z,i,j
+    ((<= rx #x07)
+     (setq dcpu:dst-reg rx)
+     (dcpu:reg-get rx))
+    ;; [A]
+    ((<= rx #x0F)
+     (setq dcpu:dst-addr (dcpu:reg-get (- rx #x08)))
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; [index+A]
+    ((<= rx #x17)
+     (incf dcpu:state-cycles)
+     (setq dcpu:dst-addr (+ (dcpu:reg-get (- rx #x10)) (dcpu:pc-next-word)))
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; PUSH
+    ;; http://www.reddit.com/r/dcpu16/comments/suq7z/\
+    ;; 16_1_5_spec_question_sp_and_push_as_a_bvalue/
+    ((= rx #x18)
+     (setq dcpu:sp (dcpu:u16+ dcpu:sp -1))
+     (setq dcpu:dst-addr dcpu:sp)
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; PEEK / [SP]
+    ((= rx  #x19)
+     (setq dcpu:dst-addr dcpu:sp)
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; PICK / [SP + i]
+    ((= rx  #x1a)
+     (incf dcpu:state-cycles)
+     (setq dcpu:dst-addr (dcpu:u16+ dcpu:sp (dcpu:pc-next-word)))
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; SP
+    ((= rx #x1b)
+     (setq dcpu:dst-reg 10)
+     dcpu:sp)
+    ;; PC
+    ((= rx #x1c)
+     (setq dcpu:dst-reg 9)
+     dcpu:pc)
+    ;; EX
+    ((= rx #x1d)
+     (setq dcpu:dst-reg 8)
+     dcpu:ex)
+    ;; [next word]
+    ((= rx #x1e)
+     (incf dcpu:state-cycles 1)
+     (setq dcpu:dst-addr (dcpu:pc-next-word))
+     (dcpu:mem-get dcpu:dst-addr))
+    ;; LIT ; =>
+    ((= rx #x1f)
+     (incf dcpu:state-cycles 1)
+     (dcpu:pc-next-word))
+    (t
+     (error "dcpu:instr-val-rb")))))
 
-(defun dcpu:check-breakpoint-addr (addr why)
-  (when (gethash addr dcpu:breakpoint-addr-table)
-    (dcpu:set-break t why)))
+;;;;;;;;;;
 
-(defun dcpu:set-breakpoint-addrs (&rest addrs)
-  (dolist (addr addrs)
-    (puthash addr t dcpu:breakpoint-addr-table)))
-
-(defun dcpu:clear-breakpoint-addrs (&rest addrs)
-  (dolist (addr addrs)
-    (remhash addr dcpu:breakpoint-addr-table)))
-
-(defun dcpu:clear-all-breakpoint-addr ()
-  (clrhash dcpu:breakpoint-addr-table))
-
-;;;;;
-
-(defun dcpu:run-loop (for-icnt &optional for-cycles)
-  ;;(assert dcpu:cur-cpu t "dcpu:cur-cpu needs to be set.")
-  (let ((dcpu:cycles (dcpu:get-reg 'cycles))
-        (cycles-max  (dcpu:get-reg 'cycles-max))
-        (dcpu:icnt   (dcpu:get-reg 'icnt))
-        (icnt-max    (dcpu:get-reg 'icnt-max))
-        (dcpu:skip   (dcpu:get-reg 'skip))
-        (dcpu:pc     (dcpu:get-reg 'PC))
-        (dcpu:sp     (dcpu:get-reg 'SP))
-        (dcpu:dst-addr nil)
-        (dcpu:dst-reg  nil)
-        last-dcpu:pc
-        addr instr op ra rb
-        val val-a val-b val-o
-        )
+(defmacro dcpu:gen-run-cond ()
+  (let* ((opc-lst (dcpu:opcodes-list))
+         opc-spc-lst
+         opc-basic-lst)
+    ;; split into two lists.
+    (mapc
+     (lambda (x)
+       (if (dcpu:opcode-specialcode x)
+         (push x opc-spc-lst)
+         (if (dcpu:opcode-opcode x)
+           (push x opc-basic-lst))))
+     opc-lst)
     ;;
-    (dcpu:clear-break)
-    ;; max cycles?
-    (cond
-     ((numberp for-cycles)
-      (setq cycles-max (+ (or dcpu:cycles 0) for-cycles))
-      ;;(dcpu:set-break (< cycles-max dcpu:cycles) 'cycles-max)
-      )
-     ((null for-cycles)
-      nil)
-     ;;
-     (t
-      (setq cycles-max t)))
-    (dcpu:set-reg 'cycles-max cycles-max)
-    ;; max icnt?
-    (cond
-     ((numberp for-icnt)
-      (setq icnt-max (+ (or dcpu:icnt 0) for-icnt)))
-     ((null for-icnt)
-       t)
-     (t
-      (setq icnt-max t)))
-    (dcpu:set-reg 'icnt-max icnt-max)
+    `(cond
+      ((eql dcpu:cur-op 0)
+       (setq dcpu:cur-op (dcpu:extract-rb dcpu:cur-instr))
+       (cond
+        ,@(mapcar
+           (lambda (opc)
+             `((eql dcpu:cur-op ,(dcpu:opcode-specialcode opc))
+               (incf dcpu:state-cycles ,(dcpu:opcode-cycles opc))
+               ,@(dcpu:opcode-body opc)))
+           opc-spc-lst)
+        (t
+         (dcpu:break-set 'bad-special-instr)
+         ;;(error "no special match")
+         )))
+      ,@(mapcar
+         (lambda (opc)
+           `((eql dcpu:cur-op ,(dcpu:opcode-opcode opc))
+             (incf dcpu:state-cycles ,(dcpu:opcode-cycles opc))
+             ,@(dcpu:opcode-body opc)))
+         opc-basic-lst)
+      (t
+       (dcpu:break-set 'bad-basic-instr)
+       ;;(error "no basic match")
+       )
+      )))
+;; (pp1 (macroexpand '(dcpu:gen-run-cond)))
 
+(defun dcpu:run-loop (&optional num-icount num-cycles)
+  ;;
+  (setq dcpu:run-until-icount
+        (if (numberp num-icount)
+          (+ dcpu:state-icount num-icount)
+          nil))
+  (setq dcpu:run-until-cycles
+        (if (numberp num-cycles)
+          (+ dcpu:state-cycles num-cycles)
+          nil))
+
+  ;; clear our running breaks
+  (dcpu:breaks-clear)
+  ;;
+  (run-hooks dcpu:run-start-hook)
+
+  ;; run until a break is posted
+  (while (not dcpu:state-breaks)
+    (setq dcpu:dst-addr  nil
+          dcpu:dst-reg   nil
+          dcpu:dst-val   nil
+          dcpu:valA      nil
+          dcpu:valB      nil)
     ;;
-    (while (not dcpu:break)
-      (setf dcpu:dst-addr nil
-            dcpu:dst-reg  nil
-            last-dcpu:pc  dcpu:pc
-            instr   (dcpu:get-mem dcpu:pc)
-            op      (dcpu:extract-op instr)
-            ra      (dcpu:extract-ra instr)
-            rb      (dcpu:extract-rb instr)
-            val     nil
-            val-o   nil)
-      ;; trace what we are about to do
-      (when dcpu:feature-trace
-        (dcpu:trace-instr))
-      ;;
-      (setf dcpu:pc (dcpu:u16+ dcpu:pc 1))
-      (incf dcpu:cycles)
-      (incf dcpu:icnt)
-      ;;
-      (cond
-       ;; suppressed instr?
-       (dcpu:skip
-        ;; take off one, as we
-        (incf dcpu:pc (1- (dcpu:instr-len instr)))
-        (setq dcpu:skip nil))
-       ;; non-basic?
-       ((= 0 op)
-        (setf op ra
-              ra (dcpu:extract-rb instr))
-        ;;
-        (case op
-          ;; reserved
-          (#x0
-           (error ""))
-          ;; JSR
-          (#x1
-           (setf dcpu:sp (dcpu:u16+ dcpu:sp -1))
-           (dcpu:set-mem dcpu:sp dcpu:pc)
-           (setq val-a (dcpu:get-rx-val ra))
-           (setf dcpu:pc val-a))
-          ;; GETC ;; 000000 000010 0000 => 0x0020
-          (#x2
-           ;;(dcpu:display-screen)
-           (dcpu:ui-update)
-           (let ((c (read-char "DCPU read-char:" nil dcpu:read-char-delay)))
-             (if (not c)
-               (setq c 0))
-             (setq val c
-                   dcpu:dst-reg ra)))
-          )
-        nil)
-       ;; basic...
-       (t
-        ;; get the values
-        (setq val-a (dcpu:get-rx-val ra))
-        (dcpu:check-breakpoint-addr dcpu:addr 'mem-a)
-        ;; discard the dest
-        (let ((dcpu:dst-addr nil)
-              (dcpu:dst-reg  nil))
-          (setf val-b (dcpu:get-rx-val rb))
-          (dcpu:check-breakpoint-addr dcpu:addr 'mem-b))
-        (case op
-          (#x0
-           (error "shouldnt get here"))
-          ;; SET a, b
-          (#x1
-           (setq val val-b))
-          ;; ADD a, b
-          (#x2
-           (incf dcpu:cycles 1) ; extra time
-           (setq val (+ val-a val-b)
-                 val-o (if (< #xFFFF val) 0 #x0001)))
-          ;; SUB a, b
-          (#x3
-           (incf dcpu:cycles 1) ; extra time
-           (setq val (- val-a val-b)
-                 val-o (if (< val 0) #xFFFF 0)))
-          ;; MUL a, b - sets a to a*b, sets O to ((a*b)>>16)&#xffff
-          (#x4
-           (incf dcpu:cycles 1) ; extra time
-           (setq val (* val-a val-b)
-                 val-o (dcpu:u16 (lsh val -16))))
-          ;; DIV a, b - sets a to a/b, sets O to ((a<<16)/b)&#xffff.
-          ;;if b==0, sets a and O to 0 instead.
-          (#x5
-           (incf dcpu:cycles 2) ; extra time
-           (if (= 0 val-b)
-             (progn
-               (setq val 0)
-               val-o 0)
-             (progn
-               (setq val (/ val-a val-b)
-                     val-o (/ (lsh val-a 16) val-b)))))
-          ;; MOD a, b - sets a to a%b. if b==0, sets a to 0 instead.
-          (#x6
-           (incf dcpu:cycles 2) ; extra time
-           (setq val (if (= 0 val-b) 0 (mod val-a val-b))))
-          ;; SHL a, b - sets a to a<<b, sets O to ((a<<b)>>16)&#xffff
-          (#x7
-           (incf dcpu:cycles 1) ; extra time
-           (setq val (lsh val-a val-b)
-                 val-o (lsh val -16)))
-          ;; SHR a, b - sets a to a>>b, sets O to ((a<<16)>>b)&#xffff
-          (#x8
-           (incf dcpu:cycles 1) ; extra time
-           (setq val-b (- val-b)
-                 val (lsh val-a val-b)
-                 val-o (lsh (lsh val-a 16) val-b)))
-          ;; AND a, b
-          (#x9
-           (setq val (logand val-a val-b)))
-          ;; BOR a, b
-          (#xa
-           (setq val (logior val-a val-b)))
-          ;; XOR a, b
-          (#xb
-           (setq val (logxor val-a val-b)))
-          ;; IFE a, b - performs next instruction only if a==b
-          (#xc
-           (incf dcpu:cycles 1) ; extra time
-           (when (/= val-a val-b)
-             (incf dcpu:cycles 1) ; extra time
-             (setq dcpu:skip t)))
-          ;; IFN a, b - performs next instruction only if a!=b
-          (#xD
-           (incf dcpu:cycles 1) ; extra time
-           (when (= val-a val-b)
-             (incf dcpu:cycles 1) ; extra time
-             (setq dcpu:skip t)))
-          ;; IFG a, b - performs next instruction only if a>b
-          (#xE
-           (incf dcpu:cycles 1) ; extra time
-           (when (<= val-a val-b)
-             (incf dcpu:cycles 1) ; extra time
-             (setq dcpu:skip t)))
-          ;; IFB a, b - performs next instruction only if (a&b)!=0
-          (#xF
-           (incf dcpu:cycles 1) ; extra time
-           (when (= 0 (logand val-a val-b))
-             (incf dcpu:cycles 1) ; extra time
-             (setq dcpu:skip t)))
-          )))
-      ;; commit reg state
-      (dcpu:set-reg 'cycles dcpu:cycles)
-      (dcpu:set-reg 'icnt   dcpu:icnt)
-      (dcpu:set-reg 'PC     dcpu:pc)
-      (dcpu:set-reg 'SP     dcpu:sp)
-      (dcpu:set-reg 'skip   dcpu:skip)
-      (when val-o
-        (dcpu:set-reg 'O (dcpu:u16 val-o)))
-      (when val
-        (when dcpu:dst-addr
-          (dcpu:set-mem dcpu:dst-addr (dcpu:u16 val)))
-        (when dcpu:dst-reg
-          (dcpu:set-reg dcpu:dst-reg (dcpu:u16 val))
-          ;; the above might replace our values
-          (setf dcpu:pc (dcpu:get-reg 'PC)
-                dcpu:sp (dcpu:get-reg 'SP))))
+    (unwind-protect
+        (progn
+          (setq dcpu:orig-pc   dcpu:pc)
+          (setq dcpu:cur-pc    dcpu:pc)
+          (setq dcpu:cur-instr (dcpu:pc-next-word))
+          (setq dcpu:cur-op    (dcpu:extract-op dcpu:cur-instr))
+          ;;
+          (dcpu:instr-val-ra (dcpu:extract-ra dcpu:cur-instr))
+          (if (/= 0 dcpu:cur-op)
+            (dcpu:instr-val-rb (dcpu:extract-rb dcpu:cur-instr)))
 
-      ;; keep running?
-      (if (numberp cycles-max)
-        (dcpu:set-break (<= cycles-max dcpu:cycles) 'cycles-max))
-      (if (numberp icnt-max)
-        (dcpu:set-break (<= icnt-max dcpu:icnt) 'icnt-max))
-      (dcpu:set-break (= dcpu:pc last-dcpu:pc) 'pc-loop)
+          ;; handle skip
+          (cond
+           (dcpu:state-skip
+            ;; keep skipping ifs
+            (if (and (<= #x10 dcpu:cur-op) (<= dcpu:cur-op #x16))
+              nil
+              (setq dcpu:state-skip nil)))
+           ;;
+           (t
+            (dcpu:gen-run-cond)))
 
-      ;; hit a break?
-      (dcpu:check-breakpoint-addr dcpu:pc 'pc-break)
+          ;; post step update
+          (incf dcpu:state-icount)
 
-      ;; post-step updates
-      (when (and dcpu:sit-for (not dcpu:break))
-        (dcpu:ui-update)
-        (sit-for dcpu:sit-for))
+          ;; ran out?
+          (if (and dcpu:run-until-cycles
+                   (<= dcpu:run-until-cycles dcpu:state-cycles))
+            (dcpu:break-set 'max-cycles))
+          (if (and dcpu:run-until-icount
+                   (<= dcpu:run-until-icount dcpu:state-icount))
+            (dcpu:break-set 'max-icount))
 
-      (run-hooks 'dcpu:post-step-hooks))
-    ;; post-run update
-    (dcpu:ui-update)
-    (run-hooks 'dcpu:post-run-hooks)
-    nil))
+          ;;
+          (if dcpu:trace
+            (dcpu:trace-msga
+             "%-30s %s"
+             (dcpu:disasm-addr dcpu:orig-pc)
+             (if dcpu:dst-val
+               (format "=#x%04x (%s)" dcpu:dst-val dcpu:dst-val)
+               "")))
 
-(defun dcpu:run-1 ()
-  (interactive)
-  (dcpu:run-loop 1 nil))
+          ;; commit our pc
+          ;; @todo better unwind
+          (setq dcpu:orig-pc dcpu:pc)
+          (dcpu:ui-update)
+          nil)
+      (progn ;; unwind form
+        (setq dcpu:pc dcpu:orig-pc)))
+
+    (when (and dcpu:run-sit-for (not dcpu:state-breaks))
+      (sit-for dcpu:run-sit-for))
+    ;; end of one step
+    (run-hooks dcpu:run-step-hook)
+    nil)
+  ;; end of run-loop
+  (run-hooks dcpu:run-stop-hook)
+  nil)
+
+;; (pp1 (macroexpand (symbol-function 'dcpu:run-loop)))
+;; (progn (dcpu:init-cpu) (dcpu:load-from-file "test-basic1.dasm.hex"))
+;; (dcpu:ui-update)
+;; (dcpu:run-loop)
 
 ;; (eval-buffer)
-;; (dcpu-test-1)
-;; (progn (dcpu:standard-ui) (dcpu:ui-update))
-;; (dcpu:run 10)
-;; (dcpu:set-reg 'PC #x0a)
-
 (provide 'dcpu-cpu)

@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-cli.el ---
 ;;
-;; $Id: dcpu-cli.el,v 1.2 2012/04/21 21:54:31 harley Exp $
+;; $Id: dcpu-cli.el,v 1.3 2012/05/03 16:34:07 harley Exp $
 ;;
 
 (eval-when-compile
@@ -22,7 +22,7 @@
         command-line-args-left nil)
   (message "dcpu:cli-main-args: %s" dcpu:cli-main-args)
   ;;
-  (dcpu:ensure-active-cpu)
+  (dcpu:init-cpu)
   (when (car dcpu:cli-main-args)
     (dcpu:load-file (car dcpu:cli-main-args)))
   ;;

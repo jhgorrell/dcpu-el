@@ -1,14 +1,15 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-ui.el ---
 ;;
-;; $Id: dcpu-ui.el,v 1.14 2012/04/21 21:54:31 harley Exp $
+;; $Id: dcpu-ui.el,v 1.23 2012/05/06 05:22:18 harley Exp $
 ;;
-
-(require 'dcpu-display)
-(require 'dcpu-cpu)
 
 (eval-when-compile
   (require 'cl))
+
+(require 'dcpu-defs)
+(require 'dcpu-display)
+(require 'dcpu-cpu)
 
 ;;;;;
 
@@ -20,31 +21,48 @@
 (defvar dcpu:ui-mem-win    nil)
 (defvar dcpu:ui-screen-win nil)
 (defvar dcpu:ui-main-win   nil)
+(defvar dcpu:ui-right-win  nil)
 
 (defvar dcpu:ui-window-config nil)
 (defvar dcpu:ui-window-orig-config nil)
+
+(defvar dcpu:ui-main-width 80)
 
 ;;;;;
 
 (defvar dcpu:ui-menu-key [f11])
 (defvar dcpu:ui-run-key  [f12])
 
-(defvar dcpu:ui-menu-keymap 
+(defvar dcpu:ui-menu-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map dcpu:ui-menu-key 'dcpu:ui-toggle)
     ;;
-    (define-key map "R" 'dcpu:cpu-reset)
+    (define-key map "R" 'dcpu:ui-cpu-reset)
     ;;
     (define-key map "l" 'dcpu:ui-load-mem)
     (define-key map "s" 'dcpu:ui-save-mem)
     ;;
+    (define-key map "w1" 'dcpu:ui-goto-reg-win)
+    (define-key map "w2" 'dcpu:ui-goto-mem-win)
+    (define-key map "w3" 'dcpu:ui-goto-screen-win)
+    (define-key map "w4" 'dcpu:ui-goto-main-win)
+    (define-key map "w5" 'dcpu:ui-goto-right-win)
+    (define-key map "wm" 'dcpu:ui-goto-mem-win)
+    (define-key map "wr" 'dcpu:ui-goto-reg-win)
+    (define-key map "ws" 'dcpu:ui-goto-screen-win)
+    (define-key map "wt" 'dcpu:ui-view-trace)
+    (define-key map "ww" 'dcpu:ui-goto-main-win)
+    ;;
     (define-key map "b" 'dcpu:ui-set-break)
     (define-key map "c" 'dcpu:ui-clear-break)
-    (define-key map "m" 'dcpu:ui-add-mem-list)
+    (define-key map "m" 'dcpu:ui-add-areg)
+    (define-key map "u" 'dcpu:ui-update)
     ;;
     (define-key map "1" 'dcpu:ui-run-speed-1)
     (define-key map "2" 'dcpu:ui-run-speed-2)
     (define-key map "3" 'dcpu:ui-run-speed-3)
+    ;;
+    (define-key map "t" 'dcpu:trace-toggle)
     ;;
     (define-key map "C" 'dcpu:ui-toggle-screen-color)
     ;;
@@ -60,7 +78,7 @@
     map)
   "")
 
-(define-minor-mode dcpu:ui 
+(define-minor-mode dcpu:ui
   "A global minor mode which controls the DCPU emulator and settings.
 \\<dcpu:ui-keymap>
 \\[dcpu:ui-run] runs the emulator. (Prefix arg is num of instrs)
@@ -97,49 +115,114 @@
 
 (defvar dcpu:ui-add-mem-list-len 32)
 
-(defun dcpu:ui-add-mem-list ()
+(defun dcpu:ui-add-areg ()
   (interactive)
-  (let ((addr (read-number "dcpu: add mem addr: " (or dcpu:addr dcpu:pc 0)))
-        (len (read-number "dcpu: add mem len: " (or dcpu:ui-add-mem-list-len 32))))
-    (setq dcpu:ui-add-mem-list-len len)
-    (dcpu:add-to-mem-list addr len)
-    ;; update
-    ;;(dcpu:display-mem-list)
-    nil))
-;; (dcpu:ui-add-mem-list)
+  (let ((addr (read-number "dcpu: add mem addr: " (or dcpu:tmp-addr dcpu:pc 0)))
+        (len  (read-number "dcpu: add mem len: " (or dcpu:ui-add-mem-list-len 32)))
+        (data (read-string "dcpu: add mem format: ")))
+    (let ((areg (dcpu:make-aregion :s addr :l len :d (intern data))))
+      (dcpu:aregionlist-push 'dcpu:display-areg-list areg)))
+  nil)
 
 ;;;;;
 
+(defun dcpu:ui-select-window (win)
+  (if (window-live-p win)
+    (select-window win)
+    (error "not live")))
+
+(defun dcpu:ui-goto-reg-win ()
+  (interactive)
+  (dcpu:ui-select-window dcpu:ui-reg-win))
+;; (dcpu:ui-goto-reg-win)
+
+(defun dcpu:ui-goto-mem-win ()
+  (interactive)
+  (dcpu:ui-select-window dcpu:ui-mem-win))
+;; (dcpu:ui-goto-mem-win)
+
+(defun dcpu:ui-goto-screen-win ()
+  (interactive)
+  (dcpu:ui-select-window dcpu:ui-screen-win))
+;; (dcpu:ui-goto-screen-win)
+
+(defun dcpu:ui-goto-main-win ()
+  (interactive)
+  (dcpu:ui-select-window dcpu:ui-main-win))
+;; (dcpu:ui-goto-main-win)
+
+(defun dcpu:ui-goto-right-win ()
+  (interactive)
+  (dcpu:ui-select-window dcpu:ui-right-win))
+;; (dcpu:ui-goto-right-win)
+
+(defun dcpu:ui-view-trace ()
+  (interactive)
+  (let ((tbuf (get-buffer-create dcpu:trace-bufname)))
+    (if (eq tbuf (current-buffer))
+      (bury-buffer)
+      (switch-to-buffer tbuf))))
+
+;;;;;
+
+(defun dcpu:current-window ()
+  ;; we do this as
+  ;; (get-buffer-window (current-buffer))
+  ;; seems to return the lower numbered window
+  ;; when that buffer is already in a window.
+  (let ((start-buf (current-buffer))
+        (win nil))
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer))
+      (setq win (get-buffer-window (current-buffer))))
+    (switch-to-buffer start-buf)
+    win))
+;; (dcpu:current-window)
+
 ;; this function ignores "ARG"; but replacements might use it.
 (defun dcpu:build-standard-ui (&optional arg)
-  (let ((buf (current-buffer)))
+  (let ((main-buf (current-buffer)))
     ;; one window
     (delete-other-windows)
-    ;; reg
-    (split-window-vertically 5)
+    ;; wide? split and use the left side.
+    (let ((ww (window-width)))
+      (setq dcpu:ui-right-win nil)
+      (when (< 130 ww)
+        ;; 1+ for the scrollbar
+        (split-window-horizontally (1+ dcpu:ui-main-width))
+        (other-window 1)
+        (setq dcpu:ui-right-win (dcpu:current-window))
+        (other-window -1)))
+    ;; start with the reg window and work down.
     (switch-to-buffer (get-buffer-create dcpu:reg-bufname))
-    (setq dcpu:ui-reg-win (get-buffer-window (current-buffer)))
-    ;; mem
+    (setq dcpu:ui-reg-win (dcpu:current-window))
+    (set-window-dedicated-p dcpu:ui-reg-win t)
+    ;; create the mem window
+    (split-window-vertically 5)
     (other-window 1)
     (switch-to-buffer (get-buffer-create dcpu:mem-bufname))
-    (setq dcpu:ui-mem-win (get-buffer-window (current-buffer)))
-    ;; the main
+    (setq dcpu:ui-mem-win (dcpu:current-window))
+    (set-window-dedicated-p dcpu:ui-mem-win t)
+    ;; create the main
     (split-window-vertically dcpu:ui-mem-lines)
-    (other-window 1)
-    (switch-to-buffer buf)
-    (setq dcpu:ui-main-win (get-buffer-window (current-buffer)))
-    ;; now go back to split the mem window into
+    (setq dcpu:ui-main-win (dcpu:current-window))
+    ;; now go back to create the screen window.
     (select-window dcpu:ui-mem-win)
     (split-window-horizontally -33)
     (other-window 1)
     (switch-to-buffer (get-buffer-create dcpu:screen-bufname))
-    (setq dcpu:ui-screen-win (get-buffer-window (current-buffer)))
+    (setq dcpu:ui-screen-win (dcpu:current-window))
+    (set-window-dedicated-p dcpu:ui-screen-win t)
+    ;;
+    (select-window dcpu:ui-main-win)
+    (switch-to-buffer main-buf)
     ;;
     (setq dcpu:ui-window-config (current-window-configuration))
+    ;;
+    (dcpu:ui-select-window dcpu:ui-main-win)
     nil))
-;; (progn (eval-buffer) (dcpu:build-standard-ui))
-;; (select-window dcpu:ui-reg-win)
-;; (select-window dcpu:ui-main-win)
+;; (progn (eval-buffer) (dcpu:build-standard-ui)
+;; (window-width)
 
 (defun dcpu:ui-enter (&optional arg)
   (interactive "P")
@@ -182,11 +265,19 @@
 
 (defun dcpu:ui-update ()
   (interactive)
-  (save-excursion
-    (dcpu:display-regs)
-    (dcpu:display-mem)
-    (dcpu:display-screen)
-    nil))
+  ;;
+  (dcpu:display-regs)
+  (dcpu:display-mem)
+  (dcpu:display-screen)
+  nil)
+
+;;;;;
+
+(defun dcpu:ui-cpu-reset (arg)
+  (interactive "p")
+  ;; test arg
+  (dcpu:init-regs)
+  (dcpu:ui-update))
 
 (defun dcpu:ui-run (arg)
   (interactive "p")
@@ -208,21 +299,21 @@
 (defun dcpu:ui-run-speed-1 ()
   "Turn off updates and run fast."
   (interactive)
-  (setq dcpu:sit-for nil)
+  (setq dcpu:run-sit-for nil)
   (dcpu:run-loop t t)
   nil)
 
 (defun dcpu:ui-run-speed-2 ()
   "Run fast with updates."
   (interactive)
-  (setq dcpu:sit-for 0.1)
+  (setq dcpu:run-sit-for 0.1)
   (dcpu:run-loop t t)
   nil)
 
 (defun dcpu:ui-run-speed-3 ()
   "Run slow with updates."
   (interactive)
-  (setq dcpu:sit-for 0.5)
+  (setq dcpu:run-sit-for 0.5)
   (dcpu:run-loop t t)
   nil)
 

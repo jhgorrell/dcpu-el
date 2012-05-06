@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.11 2012/04/21 21:54:31 harley Exp $
+;; $Id: dasm-mode.el,v 1.16 2012/05/04 08:14:35 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -16,13 +16,15 @@
 ;; License:    GPL v3 or later (same as emacs)
 
 ;; (require 'dcpu-autoloads nil t) ???
-(require 'dcpu)
+;; (require 'dcpu)
 
 ;;;;;
 
 ;; I like "nil"; "t" is more correct
 (defvar dasm-indent-instr-line-keep-point t
   "*Keep the point when indenting.")
+
+(defvar dasm-output-bufname " *dasm assemble*")
 
 (defvar dasm-mode-hooks
   nil)
@@ -132,7 +134,7 @@
 ;;;###autoload
 (defun dasm-assemble-file (filename &optional out-file)
   (or out-file (setq out-file (concat filename ".hex ")))
-  (let ((buf     (get-buffer-create "*dasm assemble*"))
+  (let ((buf     (get-buffer-create dasm-output-bufname))
         (cmd      (concat
                    dasm-asm-program " "
                    "-O hex "
@@ -154,13 +156,15 @@
   (let ((fn (buffer-file-name))
         (buf (current-buffer)))
     ;;
-    (dcpu:activate-cpu (dcpu:new-cpu))
+    (dcpu:init-cpu)
     (dcpu:ui-update)
     ;;
     (dasm-assemble-file fn)
     (dcpu:load-from-file (concat fn ".hex"))
-    (when (not dcpu:display-mem-list)
-      (dcpu:add-to-mem-list 0 (* 8 16)))
+    (when (not dcpu:display-areg-list)
+      (dcpu:aregionlist-push 
+       'dcpu:display-areg-list
+       (dcpu:make-aregion :s 0 :l (* 8 16) :d 'words)))
     ;;
     (dcpu:ui-enter)
     (dcpu:ui-update)
@@ -223,7 +227,7 @@
   (save-excursion
     (beginning-of-line)
     (and
-     (dasm-prev-instr 1 t) 
+     (dasm-prev-instr 1 t)
      (looking-at dasm-instr-if-start-regexp))))
 
 ;;;;;
@@ -237,47 +241,45 @@
 ;; (dasm-adj-whitespace 10)
 ;; (dasm-adj-whitespace -10)
 
-(defun dasm-indent-instr-line ()
-  "Intent the line as an instr wo preserving point"
-  (interactive)
-  ;; fix up the indent based on where we are in the line
-  (let (p-start p-bol p-boi p-boa prev-indent)
-    ;; we have to look at the prior two instr to figure the indent.
+(defun dasm-space-to-column (targ)
+  (skip-chars-forward " \t")
+  (let ((more (- targ (current-column))))
+    (if (< 0 more)
+      (insert (make-string more ? )))))
+;; (dasm-space-to-column 10)
+;; (dasm-space-to-column 50)
+
+(defvar dasm-compute-instr-indent nil)
+(defun dasm-compute-instr-indent ()
+  (let ((col dasm-instr-col))
     (save-excursion
-      (setq prev-indent dasm-instr-col)
       (beginning-of-line)
       ;; any instr one line up? use it
       (when (dasm-prev-instr 1 t)
-        (setq prev-indent (current-indentation))
-        ;; an if one line up? use it +2
+        (setq col (current-indentation))
+        ;; an "if"" one line up? use it +2
         (if (looking-at dasm-instr-if-start-regexp)
-          (setq prev-indent (+ dasm-instr-if-offset prev-indent))
+          (setq col (+ dasm-instr-if-offset col))
           ;; an if two lines up? use it; no +2
           (when (dasm-prev-instr 1 t)
             (if (looking-at dasm-instr-if-start-regexp)
-              (setq prev-indent (current-indentation)))))))
-    ;; where we started
-    (setq p-start (point-marker))
-    ;;
-    (beginning-of-line)
-    (setq p-bol (point))
-    ;;
-    (skip-chars-forward " \t")
-    (dasm-adj-whitespace (- prev-indent (current-column)))
-    ;;
-    (setq p-boi (point))
-    ;;
-    (when (looking-at "\\sw+")
-      (forward-word 1)
-      (skip-chars-forward " \t")
-      (dasm-adj-whitespace (- dasm-instr-col-width (- (point) p-boi)))
-      ;;
-      (when (looking-at "\\sw+")
-        (forward-word 1)))
-    ;; could do more parsing etc
-    (when dasm-indent-instr-line-keep-point
-      (goto-char p-start))
-    nil))
+              (setq col (current-indentation)))))))
+    (setq dasm-compute-instr-indent col)))
+
+(defun dasm-indent-instr-line ()
+  "Intent the line as an instr wo preserving point"
+  (let ((col (dasm-compute-instr-indent)))
+    (save-excursion
+      (beginning-of-line)
+      (if (looking-at "[ \t]+$")
+        (delete-horizontal-space)
+        (skip-chars-forward " \t")
+        (dasm-adj-whitespace (- col (current-column)))
+        (forward-word 1)
+        (if (looking-at "[ \t]+$")`
+          (delete-horizontal-space)
+          (skip-chars-forward " \t")
+          (dasm-adj-whitespace (- (+ col dasm-instr-col-width) (current-column))))))))
 
 ;; dasm-indent-line cant be too magic - indent-buffer uses it
 (defun dasm-indent-line ()
@@ -287,53 +289,55 @@
    ((looking-at " *;;")
     (indent-line-to 0))
    ((looking-at " *;[^;]")
-    (indent-line-to dasm-instr-col))
-;;    (cond
-;;     ((= 0 (current-column))
-;;      (indent-line-to
-;;       (save-excursion
-;;         (forward-line -1)
-;;         (current-indentation))))
-;;   (t
-;;      (indent-line-to 0))))
-   ;; :label
+    (indent-line-to (dasm-compute-instr-indent)))
    ((dasm-line-labelp)
     (indent-line-to 0))
-;;    (let ((prior-indent (or
-;;                         (save-excursion
-;;                           (and (dasm-prev-label 1 t) (current-indentation)))
-;;                         dasm-label-col)))
-;;      (cond
-;;       ((= prior-indent (current-indentation))
-;;        (indent-line-to 0))
-;;       (t
-;;        (indent-line-to prior-indent)))))
-   ;; treat the line as an instr, even if (not (dasm-line-instrp))
    (t
     (dasm-indent-instr-line)))
   nil)
 
+(defun dasm-open-line ()
+  (interactive)
+  (end-of-line)
+  (insert "\n")
+  (dasm-space-to-column (dasm-compute-instr-indent)))
+
 (defun dasm-electric-tab ()
   (interactive)
-  (let ((dasm-indent-instr-line-keep-point nil))
-    ;; more magic here
-    (dasm-indent-line)))
+  (let ((p-start (point-marker))
+        (dasm-compute-instr-indent nil))
+    (dasm-indent-line)
+    (goto-char p-start))
+  ;; do the magic
+  (let* ((ccol (current-column))
+         (icol (dasm-compute-instr-indent))
+         (acol (+ icol dasm-instr-col-width)))
+    (cond
+     ((or (dasm-line-labelp) (dasm-line-commentp))
+      (dasm-open-line))
+     ;; instr!
+     ((< ccol icol)
+      (dasm-space-to-column icol))
+     ;;
+     ((= ccol icol)
+      (when (looking-at "\\sw+")
+        (forward-word 1)
+        (dasm-space-to-column acol)))
+     ((< ccol acol)
+      (dasm-space-to-column acol))
+     ((<= acol acol)
+      (if (looking-at "[ \t]*$")
+        (dasm-open-line)
+        (forward-word 1)))
+     )))
 
 (defun dasm-electric-ret ()
   (interactive)
   (let ((dasm-indent-instr-line-keep-point nil))
     (dasm-indent-line)
-    (end-of-line) 
+    (end-of-line)
     (insert "\n")
     (dasm-indent-line)))
 
-;; left-margin-width
-;; (set-window-margins (get-buffer-window) 2 0)
-;; (insert (propertize "a" 'display '((margin left-margin) "X")))a
-;;(insert (propertize "abc" 'face '(foreground-color)))
-;;(insert (propertize " "
-;;                    'display '((margin left-margin) "C")
-;;
-;;                    'rear-nonsticky t))
 ;; (eval-buffer)
 (provide 'dasm-mode)

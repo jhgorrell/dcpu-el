@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.13 2012/04/17 04:53:23 harley Exp $
+#+TEXT:    $Id: README.org,v 1.15 2012/05/03 04:07:24 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -20,15 +20,28 @@
   - emulator
   - four pane display of register, memory, screen and source
   - single step and run to break
-  - screen device (addr=0x9000 32 wide 12 high)
+  - screen device (addr @ 0x8000; 32 wide 12 high)
 
 * Todo
-  - keyboard
+  - Checkpoint save/load
+  - Save/restore window ui config / different window configs in regs
+  - wide window split in half
+  - special "dcpu-checkpoint a" instr in the emulator
+  - check cycle counts
+  - instr freq count/profiler
+  - disassemble other data structures (strings,code,...)
+  - relative labels in disassembly
+  - update to latest spec
+  - cache font colors
+  - charset
+  - interrupts
+  - keyboard @ 0x7FFF
+  - devices
   - autoloads
 
-* Optimizations
+* Future Optimizations
   - macros for fixed regs
-  - "if-tree" instead of cond.
+  - "if-tree" instead of cond (huffman weight?)
 
 * Future Features
   - dump state to load later (include regs)
@@ -41,6 +54,10 @@
   - asm directives (.org .align)
   - jit
   - compiler
+
+* JIT
+  - JIT supress computing of EX when not needed
+  - supress computing of other dead values
 
 * Other Links
 
