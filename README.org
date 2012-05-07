@@ -2,7 +2,7 @@
 #+TITLE:   README.org
 #+EMAIL:   harley@panix.com
 #+TEXT:    ~/0x10c/dcpu-el/README.org
-#+TEXT:    $Id: README.org,v 1.19 2012/05/06 19:26:48 harley Exp $
+#+TEXT:    $Id: README.org,v 1.20 2012/05/07 06:26:29 harley Exp $
 
 * About "dcpu-el"
   dcpu-el is a DCPU-16 assembly mode and emulator written in elisp.
@@ -30,7 +30,7 @@
 * Emulator Keybindings
 
 : <f12>           dcpu:ui-run
-: 
+: <f11> <f11>     dcpu:ui-toggle
 : <f11> 1         dcpu:ui-run-speed-1
 : <f11> 2         dcpu:ui-run-speed-2
 : <f11> 3         dcpu:ui-run-speed-3
@@ -38,20 +38,13 @@
 : <f11> B         dcpu:ui-clear-break
 : <f11> R         dcpu:ui-cpu-reset
 : <f11> b         dcpu:ui-set-break
-: <f11> c         Prefix Command
 : <f11> m         dcpu:ui-add-areg
-: <f11> s         Prefix Command
 : <f11> t         dcpu:trace-toggle
 : <f11> u         dcpu:ui-update
-: <f11> w         Prefix Command
-: <f11> <f11>     dcpu:ui-toggle
-: 
 : <f11> c a       dcpu:ui-checkpoint-auto
 : <f11> c l       dcpu:ui-checkpoint-load
 : <f11> c s       dcpu:ui-checkpoint-save
-: 
 : <f11> s c       dcpu:ui-toggle-screen-color
-: 
 : <f11> w 1       dcpu:ui-goto-reg-win
 : <f11> w 2       dcpu:ui-goto-mem-win
 : <f11> w 3       dcpu:ui-goto-screen-win
@@ -62,6 +55,41 @@
 : <f11> w s       dcpu:ui-goto-screen-win
 : <f11> w t       dcpu:ui-view-trace
 : <f11> w w       dcpu:ui-goto-main-win
+
+* Files
+
+- dasm-mode.el        :: Mode for editing dcpu16 assembly
+
+- dcpu-elisp.el       :: elisp setup for working with dcpu el files
+
+- dcpu.el             :: Main file which includes the others
+
+- dcpu-util.el        :: Utility functions
+- dcpu-aregion.el     :: Address regions
+
+- dcpu-defs.el        :: defvars for dcpu-dcpu.el
+- dcpu-cpu.el         :: The dcpu16 emulator
+
+- dcpu-opcode-func.el :: Defines defopcode
+- dcpu-opcode-list.el :: List of defopcodes which def
+
+- dcpu-asm-defs.el    :: List of opcodes for asm/disasm
+- dcpu-asm.el         :: simple LAP inspired 2-pass assembler
+- dcpu-disasm.el      :: simple disassembler
+
+- dcpu-cli            :: shell script to run as an app
+- dcpu-cli.el         :: elisp for app
+
+- dcpu-faces.el       :: List of faces
+- dcpu-display.el     :: Display drawing functions
+- dcpu-screen.el      :: Screen drawing functions
+
+- dcpu-ui.el          :: User Interface functions
+
+- dcpu-tests.el       :: some tests and dcpu LAP code
+
+- elex.el             :: lexer written in elisp
+- elex-test.el        :: tests of lexer
 
 * Todo
   - special "dcpu-checkpoint a" instr in the emulator
