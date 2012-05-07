@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.27 2012/05/06 10:05:25 harley Exp $
+;; $Id: dcpu-display.el,v 1.28 2012/05/07 05:35:37 harley Exp $
 ;;
 
 (eval-when-compile
@@ -245,7 +245,7 @@
 
 (defun dcpu:trace-msg (&rest args)
   (if dcpu:trace
-    (dcpu:trace-append (apply 'format arg) "\n")))
+    (dcpu:trace-append (apply 'format args) "\n")))
 
 (defun dcpu:trace-msga (&rest args)
   (when dcpu:trace
@@ -264,11 +264,6 @@
      "\n"))
   nil)
 ;; (dcpu:trace-msga "%s" "foo")
-
-;; called with dcpu:pc pointing at the instr.
-(defun dcpu:trace-instr ()
-  (dcpu:trace-log (dcpu:fmt-wordq (dcpu:mem-get dcpu:pc)))
-  nil)
 
 (defun dcpu:trace-buffer-clear ()
   (interactive)

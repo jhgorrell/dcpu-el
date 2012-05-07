@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.28 2012/05/06 18:26:26 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.29 2012/05/07 05:35:37 harley Exp $
 ;;
 
 (eval-when-compile
@@ -106,7 +106,7 @@
   (let ((varval-lst (dcpu:checkpoint-get name)))
     (if (not varval-lst)
       (error "Null checkpoint"))
-    (mapcar
+    (mapc
      (lambda (varval)
        (set (car varval) (dcpu:checkpoint-val-copy (cadr varval))))
      varval-lst))
