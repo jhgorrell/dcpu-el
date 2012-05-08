@@ -1,11 +1,12 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-opcode-list.el ---
 ;;
-;; $Id: dcpu-opcode-list.el,v 1.4 2012/05/06 08:31:18 harley Exp $
+;; $Id: dcpu-opcode-list.el,v 1.5 2012/05/08 00:38:39 harley Exp $
 ;;
 
 ;; load this before editing defopcode forms.
 ;; (require 'dcpu-elisp)
+;; (eval-buffer)
 
 (require 'dcpu-opcode-func)
 

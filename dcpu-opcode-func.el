@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-opcode-func.el ---
 ;;
-;; $Id: dcpu-opcode-func.el,v 1.10 2012/05/03 16:33:41 harley Exp $
+;; $Id: dcpu-opcode-func.el,v 1.12 2012/05/08 00:39:20 harley Exp $
 ;;
 
 (eval-when-compile
@@ -110,5 +110,27 @@
     t))
 ;; (dcpu:opcode-basic-p 'set)
 
-;; (progn (dcpu:opcodes-clear) (eval-buffer))
+(defun dcpu:gen-instr-if-lst ()
+  (dcpu:sort-strings
+   (dcpu:to-strings
+    (dcpu:map-select
+     (lambda (opc)
+       (let ((n (dcpu:opcode-opcode opc)))
+         (if (and (numberp n) (<= #x10 n) (<= n #x17))
+           (dcpu:opcode-name opc))))
+     (dcpu:opcodes-list)))))
+;; (dcpu:gen-instr-if-lst)
+
+(defun dcpu:gen-instr-lst ()
+  (dcpu:sort-strings
+   (dcpu:to-strings
+    (dcpu:map-select
+     (lambda (opc)
+       (if (or (dcpu:opcode-opcode opc)
+               (dcpu:opcode-specialcode opc))
+         (dcpu:opcode-name opc)))
+     (dcpu:opcodes-list)))))
+;; (dcpu:gen-instr-lst)
+
+;; (progn (eval-buffer) (dcpu:opcodes-clear) (load "dcpu-opcode-list"))
 (provide 'dcpu-opcode-func)
