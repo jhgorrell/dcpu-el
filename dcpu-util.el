@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-util.el ---
 ;;
-;; $Id: dcpu-util.el,v 1.9 2012/05/04 08:14:35 harley Exp $
+;; $Id: dcpu-util.el,v 1.10 2012/05/08 00:38:20 harley Exp $
 ;;
 
 (eval-when-compile
@@ -115,6 +115,30 @@
       (setq i (1+ i)))
     (insert "\n")))
 ;; (dcpu:insert-string2words "hello")
+
+;;;;;
+
+(defun dcpu:map-select (func seq-lst)
+  (let ((select-lst nil))
+    (mapc
+     (lambda (x)
+       (let ((val (funcall func x)))
+         (if val
+           (setq select-lst (cons val select-lst)))))
+     seq-lst)
+    (nreverse select-lst)))
+;; (dcpu:map-select '(lambda (x) (if (evenp x) x)) '(1 2 3 4))
+
+(defun dcpu:to-strings (lst)
+  (mapcar
+   (lambda (x)
+     (format "%s" x))
+   lst))
+;; (dcpu:to-strings '(a b c))
+
+(defun dcpu:sort-strings (string-lst)
+  (sort string-lst 'string<))
+;; (dcpu:sort-strings '("x" "y" "z" "a" "b" "c"))
 
 ;;
 (provide 'dcpu-util)
