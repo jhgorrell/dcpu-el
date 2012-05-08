@@ -1,15 +1,19 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.29 2012/05/07 05:35:37 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.30 2012/05/08 05:44:50 harley Exp $
 ;;
 
 (eval-when-compile
   (require 'cl))
 
+;;
 (require 'dcpu-defs)
 (require 'dcpu-util)
 (require 'dcpu-opcode-list)
+;;
+(require 'dev-kbd)
+(require 'dev-lem)
 
 ;;;;;
 
@@ -31,6 +35,22 @@
         dcpu:state-onfire nil
         dcpu:state-skip   nil
         ))
+
+(defun dcpu:init-devs ()
+  (let ((dvec (make-vector 16 nil)))
+    (setf dcpu:dev-vec dvec)
+    (setf (elt dvec 0) (dev:make-kbd))
+    (setf (elt dvec 1) (dev:make-lem))
+    nil))
+;; (dcpu:init-devs)
+
+(defun dcpu:dev-get (idx)
+  (and 
+   (numberp idx)
+   (vectorp  dcpu:dev-vec)
+   (< idx (length dcpu:dev-vec))
+   (elt dcpu:dev-vec idx)))
+;; (dcpu:dev-get 0)
 
 (defun dcpu:init-cpu ()
   (interactive)

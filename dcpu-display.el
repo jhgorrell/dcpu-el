@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-display.el ---
 ;;
-;; $Id: dcpu-display.el,v 1.28 2012/05/07 05:35:37 harley Exp $
+;; $Id: dcpu-display.el,v 1.29 2012/05/08 05:44:50 harley Exp $
 ;;
 
 (eval-when-compile
@@ -222,15 +222,19 @@
     (erase-buffer)
     (let ((addr dcpu:screen-addr)
           word char)
-      (dotimes (y dcpu:screen-y-size)
-        (dotimes (x dcpu:screen-x-size)
-          (setq word (dcpu:mem-get addr))
-          (setq char (dcpu:screen-word2char word))
-          (if dcpu:screen-color
-            (setq char (dcpu:screen-color-char char (logand (ash word -8) #xFF))))
-          (insert char)
-          (incf addr))
-        (insert "\n")))))
+      (cond
+       ((null addr)
+        (insert "SCREEN OFF"))
+       (t
+        (dotimes (y dcpu:screen-y-size)
+          (dotimes (x dcpu:screen-x-size)
+            (setq word (dcpu:mem-get addr))
+            (setq char (dcpu:screen-word2char word))
+            (if dcpu:screen-color
+              (setq char (dcpu:screen-color-char char (logand (ash word -8) #xFF))))
+            (insert char)
+            (incf addr))
+          (insert "\n")))))))
 
 ;; (progn (dcpu:mem-set-bulk #x8000 "hello there!\n\n") (dcpu:display-screen))
 ;; (dcpu:screen-update)

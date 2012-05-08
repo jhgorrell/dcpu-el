@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-opcode-list.el ---
 ;;
-;; $Id: dcpu-opcode-list.el,v 1.5 2012/05/08 00:38:39 harley Exp $
+;; $Id: dcpu-opcode-list.el,v 1.6 2012/05/08 05:44:50 harley Exp $
 ;;
 
 ;; load this before editing defopcode forms.
@@ -78,7 +78,14 @@
   :special #x10
   :cycles  2
   ;; @todo fix this
-  (setq dcpu:a 0))
+  (let ((cnt nil))
+    (i 0)
+    (vec-len (length dcpu:dev-vec)))
+  (while (and (null cnt) (< i vec-len))
+    (if (null (elt dcpu:dev-vec i))
+      (setq cnt i))
+    (setq i (1+ i)))
+  (dcpu:dst-set (if cnt cnt vec-len)))
 
 ;;  4 | 0x11 | HWQ a | sets A, B, C, X, Y registers to information about hardware a
 ;;    |      |       | A+(B<<16) is a 32 bit word identifying the hardware id
@@ -93,15 +100,19 @@
         dcpu:c 0
         dcpu:x 0
         dcpu:y 0)
-  ;; @todo now find the HW device and call it
+  (let ((dev (dcpu:dev-get dcpu:valA)))
+    (if dev
+      (dcpu:dev-hwq dev)))
   nil)
 
 ;;  4+| 0x12 | HWI a | sends an interrupt to hardware a
 (dcpu:defopcode hwi
   :special #x12
   :cycles  4
-  ;; the hw device should call
-  ;;(incf dcpu:state-cycles NNN)
+  ;;
+  (let ((dev (dcpu:dev-get dcpu:valA)))
+    (if dev
+      (dcpu:dev-hwi dev)))
   nil)
 
 ;;;;;
@@ -340,4 +351,5 @@
         dcpu:j (dcpu:u16+ dcpu:j -1))
   (dcpu:dst-set dcpu:valA))
 
+;;
 (provide 'dcpu-opcode-list)

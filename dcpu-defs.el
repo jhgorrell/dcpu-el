@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.25 2012/05/06 18:26:26 harley Exp $
+;; $Id: dcpu-defs.el,v 1.26 2012/05/08 05:44:50 harley Exp $
 ;;
 
 (eval-when-compile
@@ -134,6 +134,8 @@ Shared with the screen, so must be greater than 12.")
   ;;
   cycles
   body)
+
+;;;;;
 
 ;; (eval-buffer)
 (provide 'dcpu-defs)
