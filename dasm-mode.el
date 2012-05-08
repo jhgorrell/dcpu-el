@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.16 2012/05/04 08:14:35 harley Exp $
+;; $Id: dasm-mode.el,v 1.18 2012/05/08 00:39:52 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -36,15 +36,21 @@
 
 ;;;;;
 
-(defvar dasm-instr-if-lst
-  '("ifb" "ife" "ifg" "ifn"))
+;; these should be taken from "dcpu:opcode-basic-vec"
+;; and "dcpu:opcode-special-vec"
 
+;; (dcpu:gen-instr-if-lst)
+(defvar dasm-instr-if-lst
+  '("ifb" "ifc" "ife" "ifg" "ifl" "ifn" "ifu"))
+
+;; (dcpu:gen-instr-lst)
 (defvar dasm-instr-op-lst
   '(;; base
-    "add" "and" "bor" "div" "mod"
-    "mul" "set" "shl" "shr" "sub" "xor"
-    ;; special
-    "jsr"
+    "add" "adx" "and" "asr" "bor" "div" "dvi" "hcf"
+    "hwi" "hwn" "hwq" "iag" "iaq" "ias" "ifa" "ifb"
+    "ifc" "ife" "ifg" "ifl" "ifn" "ifu" "int" "jsr"
+    "mdi" "mli" "mod" "mul" "rfi" "sbx" "set" "shl"
+    "shr" "std" "sti" "sub" "xor")
     ;; pseudo-instrs
     "dat" "word"
     ;; extensions
@@ -63,7 +69,7 @@
   (concat "^[ \t]*" (regexp-opt dasm-instr-if-lst)))
 
 (defvar dasm-label-regexp
-  ":[a-z0-9_]+")
+  ":[a-z0-9_.]+")
 
 (defvar dasm-label-start-regexp
   (concat "^[ \t]*" dasm-label-regexp))
