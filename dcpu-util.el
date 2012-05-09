@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-util.el ---
 ;;
-;; $Id: dcpu-util.el,v 1.10 2012/05/08 00:38:20 harley Exp $
+;; $Id: dcpu-util.el,v 1.11 2012/05/08 23:04:29 harley Exp $
 ;;
 
 (eval-when-compile
@@ -140,5 +140,6 @@
   (sort string-lst 'string<))
 ;; (dcpu:sort-strings '("x" "y" "z" "a" "b" "c"))
 
+;;;;;;;;;;
 ;;
 (provide 'dcpu-util)
