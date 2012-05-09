@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-tests.el ---
 ;;
-;; $Id: dcpu-tests.el,v 1.14 2012/05/04 12:53:28 harley Exp $
+;; $Id: dcpu-tests.el,v 1.16 2012/05/09 00:56:17 harley Exp $
 ;;
 
 ;; (progn (setq jhg-cload-enabled nil) (add-to-list 'load-path "."))
@@ -10,6 +10,7 @@
   (require 'cl))
 
 (require 'dcpu)
+(require 'dcpu-asm)
 
 ;;(require 'ert)
 
@@ -155,3 +156,52 @@
   (dcpu:ui-enter))
 ;; (progn (eval-buffer) (dcpu:test-hw-1) (dcpu:ui-update))
 ;; (dcpu:asm-labels-dump)
+
+(defun dcpu:test-disasm-all ()
+  "Try disassembling all possible words."
+  (let ((wA #xAAAA)
+        (wB #xBBBB))
+  (with-current-buffer (get-buffer-create " *dcpu disasm all*")
+    (erase-buffer)
+    (switch-to-buffer-other-window (current-buffer))
+    (dotimes (w0 #x10000)
+      (if (= 0 (logand w0 #xFF))
+        (message "dcpu:test-disasm-all: %04x" w0))
+      (insert (format "%04x: " w0))
+      (insert (dcpu:disasm-to-str w0 wA wB))
+      (insert "\n")))))
+;; (dcpu:test-disasm-all)
+
+(defun dcpu:test-ia-1 ()
+  (interactive)
+  (dcpu:init-cpu)
+  (dcpu:asm-to-mem
+   0
+   `(
+     (= :screen #x8000)
+     :start
+     (ias :inter)
+     (set i 0)
+     (set j #x41)
+     :loop
+     (sti (+ :screen i) j)
+     (ifg j #x5a)
+     (set j #x41)
+     (ifl i 382)
+     (set pc :loop)
+     (word 0 0 0 0 0 0 0)
+     :inter
+     (add b 1)
+     (rfi)
+     :end_code))
+  ;;
+  (dcpu:display-clear-aregs)
+  (dcpu:display-add-areg
+   (dcpu:make-aregion
+    :s (dcpu:asm-label-addr :start)
+    :l (dcpu:asm-label-addr :end_code)
+    :d 'disassemble))
+  (dcpu:ui-update))
+
+;; (progn (eval-buffer) (dcpu:test-ia-1))
+;; (dcpu:post-interrupt 0)

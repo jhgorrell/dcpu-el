@@ -1,7 +1,7 @@
 ;;
 ;; ~/0x10c/dcpu-el/dcpu-opcode-list.el ---
 ;;
-;; $Id: dcpu-opcode-list.el,v 1.6 2012/05/08 05:44:50 harley Exp $
+;; $Id: dcpu-opcode-list.el,v 1.7 2012/05/08 23:04:29 harley Exp $
 ;;
 
 ;; load this before editing defopcode forms.
@@ -36,31 +36,28 @@
 (dcpu:defopcode int
   :special #x08
   :cycles  4
-  (when (/= 0 dcpu:ia)
-    (setq dcpu:state-iqueue t)
-    (dcpu:sp-push dcpu:pc)
-    (dcpu:sp-push dcpu:a)
-    (setq dcpu:pc dcpu:ia)))
+  (dcpu:post-interrupt dcpu:valA))
 
 ;; 1 | 0x09 | IAG a | sets a to IA
 (dcpu:defopcode iag
   :special #x09
   :cycles  1
-  (setq dcpu:a dcpu:ia))
+  (dcpu:dst-set dcpu:ia))
 
 ;;  1 | 0x0a | IAS a | sets IA to a
 (dcpu:defopcode ias
   :special #x0a
   :cycles  1
-  (setq dcpu:ia dcpu:a))
+  (setq dcpu:ia dcpu:valA)
+  (setq dcpu:ia-enabled t))
 
 ;;  3 | 0x0b | RFI a | disables interrupt queueing, pops A from the stack, then
 ;;    |      |       | pops PC from the stack
 (dcpu:defopcode rfi
   :special #x0b
   :cycles  3
-  (setq dcpu:state-iqueue nil)
-  (setq dcpu:a (dcpu:sp-pop))
+  (setq dcpu:ia-enabled t)
+  (setq dcpu:a  (dcpu:sp-pop))
   (setq dcpu:pc (dcpu:sp-pop)))
 
 ;;  2 | 0x0c | IAQ a | if a is nonzero, interrupts will be added to the queue
@@ -69,9 +66,7 @@
 (dcpu:defopcode iaq
   :special #x0c
   :cycles  2
-  (if (= 0 dcpu:a)
-    (setq dcpu:state-iqueue nil)
-    (setq dcpu:state-iqueue t)))
+  (setq dcpu:ia-enabled (if (= 0 dcpu:valA) t nil)))
 
 ;;  2 | 0x10 | HWN a | sets a to number of connected hardware devices
 (dcpu:defopcode hwn

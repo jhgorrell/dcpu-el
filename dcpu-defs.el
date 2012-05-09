@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-defs.el ---
 ;;
-;; $Id: dcpu-defs.el,v 1.26 2012/05/08 05:44:50 harley Exp $
+;; $Id: dcpu-defs.el,v 1.27 2012/05/08 23:04:29 harley Exp $
 ;;
 
 (eval-when-compile
@@ -23,7 +23,12 @@
 (defvar dcpu:ex   0)
 (defvar dcpu:sp   0)
 (defvar dcpu:pc   0)
-(defvar dcpu:ia   0)
+
+;;
+(defvar dcpu:ia 0)
+(defvar dcpu:ia-enabled nil)
+(defvar dcpu:ia-queue nil)
+
 ;;
 (defvar dcpu:mem-vec nil)
 (defvar dcpu:dev-vec nil)
@@ -32,7 +37,6 @@
 (defvar dcpu:state-breaks   nil)
 (defvar dcpu:state-cycles   0)
 (defvar dcpu:state-icount   0)
-(defvar dcpu:state-iqueue   nil)
 (defvar dcpu:state-onfire   nil)
 (defvar dcpu:state-skip     nil)
 
@@ -43,14 +47,21 @@
     dcpu:x dcpu:y dcpu:z
     dcpu:i dcpu:j
     dcpu:ex dcpu:sp dcpu:pc
+    ;;
     dcpu:ia
+    dcpu:ia-queue    
+    dcpu:ia-enabled
+    ;; should be prim values, so copy is a copy
     dcpu:mem-vec
+    ;; the checkpoint will copy the vec but not the objects
+    ;; so side effects might occur.
+    ;; @todo add a "dcpu:dev-copy"
     dcpu:dev-vec
+    ;;
     dcpu:state-breakpoints
     dcpu:state-breaks
     dcpu:state-cycles
     dcpu:state-icount
-    dcpu:state-iqueue
     dcpu:state-onfire
     dcpu:state-skip))
 
@@ -88,6 +99,7 @@
 (defvar dcpu:run-start-hook nil)
 (defvar dcpu:run-step-hook nil)
 (defvar dcpu:run-stop-hook nil)
+(defvar dcpu:run-interrupt-hook nil)
 
 ;;;;;
 

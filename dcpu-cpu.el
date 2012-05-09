@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.30 2012/05/08 05:44:50 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.31 2012/05/08 23:04:29 harley Exp $
 ;;
 
 (eval-when-compile
@@ -10,6 +10,7 @@
 ;;
 (require 'dcpu-defs)
 (require 'dcpu-util)
+(require 'dcpu-util-queue)
 (require 'dcpu-opcode-list)
 ;;
 (require 'dev-kbd)
@@ -30,6 +31,11 @@
         dcpu:ex 0
         dcpu:pc 0
         dcpu:sp 0
+        ;;
+        dcpu:ia         0
+        dcpu:ia-queue   (dcpu:make-queue)
+        dcpu:ia-enabled nil
+        ;;
         dcpu:state-cycles 0
         dcpu:state-icount 0
         dcpu:state-onfire nil
@@ -45,7 +51,7 @@
 ;; (dcpu:init-devs)
 
 (defun dcpu:dev-get (idx)
-  (and 
+  (and
    (numberp idx)
    (vectorp  dcpu:dev-vec)
    (< idx (length dcpu:dev-vec))
@@ -93,8 +99,17 @@
 
 ;;;;;
 
+(defun dcpu:post-interrupt (msg)
+  (interactive "ndcpu:interrupt: ")
+  (dcpu:queue-push msg dcpu:ia-queue))
+;; (progn (dcpu:init-cpu) (dcpu:post-interrupt 0))
+
+;;;;;
+
 (defun dcpu:checkpoint-val-copy (val)
   (cond
+   ((dcpu:queue-p val)
+    (dcpu:queue-copy val))
    ((listp val)
     (copy-tree val))
    ((vectorp val)
@@ -478,66 +493,83 @@
           dcpu:valA      nil
           dcpu:valB      nil)
     ;;
-    (unwind-protect
-        (progn
-          (setq dcpu:orig-pc   dcpu:pc)
-          (setq dcpu:cur-pc    dcpu:pc)
-          (setq dcpu:cur-instr (dcpu:pc-next-word))
-          (setq dcpu:cur-op    (dcpu:extract-op dcpu:cur-instr))
-          ;;
-          (dcpu:instr-val-ra (dcpu:extract-ra dcpu:cur-instr))
-          (if (/= 0 dcpu:cur-op)
-            (dcpu:instr-val-rb (dcpu:extract-rb dcpu:cur-instr)))
+    (cond
+     ;; interrupts are always put into the queue,
+     ;; we pull them out here if active.
+     ((and (not dcpu:state-skip)
+           (/= dcpu:ia 0)
+           dcpu:ia-enabled
+           (dcpu:queue-head dcpu:ia-queue))
+      (let ((msg (dcpu:queue-pop dcpu:ia-queue)))
+        (setq dcpu:ia-enabled nil)
+        ;; setup for rfi
+        (dcpu:sp-push dcpu:pc)
+        (dcpu:sp-push dcpu:a)
+        ;;
+        (setq dcpu:a  msg
+              dcpu:pc dcpu:ia)
+        (run-hooks dcpu:run-interrupt-hook)))
+     ;; normal instr cycle
+     (t
+      (setq dcpu:orig-pc   dcpu:pc)
+      (setq dcpu:cur-pc    dcpu:pc)
+      (setq dcpu:cur-instr (dcpu:pc-next-word))
+      (setq dcpu:cur-op    (dcpu:extract-op dcpu:cur-instr))
+      ;;
+      (dcpu:instr-val-ra (dcpu:extract-ra dcpu:cur-instr))
+      (if (/= 0 dcpu:cur-op)
+        (dcpu:instr-val-rb (dcpu:extract-rb dcpu:cur-instr)))
 
-          ;; handle skip
-          (cond
-           (dcpu:state-skip
-            ;; keep skipping ifs
-            (if (and (<= #x10 dcpu:cur-op) (<= dcpu:cur-op #x16))
-              nil
-              (setq dcpu:state-skip nil)))
-           ;;
-           (t
-            (dcpu:gen-run-cond)))
+      ;; handle skip
+      (cond
+       (dcpu:state-skip
+        ;; keep skipping ifs
+        (if (and (<= #x10 dcpu:cur-op) (<= dcpu:cur-op #x16))
+          nil
+          (setq dcpu:state-skip nil)))
+       ;;
+       (t
+        (dcpu:gen-run-cond)))))
 
-          ;; post step update
-          (incf dcpu:state-icount)
+    ;; post step update
+    ;; taken interrupts count as instrs
+    (incf dcpu:state-icount)
 
-          ;; ran out?
-          (if (and dcpu:run-until-cycles
-                   (<= dcpu:run-until-cycles dcpu:state-cycles))
-            (dcpu:break-set 'max-cycles))
-          (if (and dcpu:run-until-icount
-                   (<= dcpu:run-until-icount dcpu:state-icount))
-            (dcpu:break-set 'max-icount))
+    ;; ran out?
+    (if (and dcpu:run-until-cycles
+             (<= dcpu:run-until-cycles dcpu:state-cycles))
+      (dcpu:break-set 'max-cycles))
+    (if (and dcpu:run-until-icount
+             (<= dcpu:run-until-icount dcpu:state-icount))
+      (dcpu:break-set 'max-icount))
 
-          ;;
-          (if dcpu:trace
-            (dcpu:trace-msga
-             "%-30s %s"
-             (dcpu:disasm-addr dcpu:orig-pc)
-             (if dcpu:dst-val
-               (format "=#x%04x (%s)" dcpu:dst-val dcpu:dst-val)
-               "")))
+    ;;
+    (if dcpu:trace
+      (dcpu:trace-msga
+       "%-30s %s"
+       (dcpu:disasm-addr dcpu:orig-pc)
+       (if dcpu:dst-val
+         (format "=#x%04x (%s)" dcpu:dst-val dcpu:dst-val)
+         "")))
 
-          ;;
-          (if (gethash dcpu:pc dcpu:state-breakpoints)
-            (dcpu:break-set 'break))
+    ;;
+    (if (gethash dcpu:pc dcpu:state-breakpoints)
+      (dcpu:break-set 'break))
 
-          ;; commit our pc
-          ;; @todo better unwind
-          (setq dcpu:orig-pc dcpu:pc)
-          (dcpu:ui-update)
-          nil)
-      (progn ;; unwind form
-        (setq dcpu:pc dcpu:orig-pc)))
+    ;; commit our pc
+    ;; @todo better unwind
+    (setq dcpu:orig-pc dcpu:pc)
 
     (when (and dcpu:run-sit-for (not dcpu:state-breaks))
+      ;; only update when running slow
+      (dcpu:ui-update)
       (sit-for dcpu:run-sit-for))
+
     ;; end of one step
     (run-hooks dcpu:run-step-hook)
     nil)
   ;; end of run-loop
+  (dcpu:ui-update)
   (run-hooks dcpu:run-stop-hook)
   nil)
 
