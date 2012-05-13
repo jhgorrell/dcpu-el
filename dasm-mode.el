@@ -1,7 +1,8 @@
+;;; dasm-mode.el --- mode for editing dcpu16 assembly
 ;;
 ;; ~/0x10c/dcpu-el/dasm-mode.el ---
 ;;
-;; $Id: dasm-mode.el,v 1.18 2012/05/08 00:39:52 harley Exp $
+;; $Id: dasm-mode.el,v 1.19 2012/05/13 01:15:58 harley Exp $
 ;;
 
 ;; in your ~/.emacs:
@@ -18,21 +19,32 @@
 ;; (require 'dcpu-autoloads nil t) ???
 ;; (require 'dcpu)
 
-;;;;;
+;;; Commentary:
+;;
+
+;;; Code:
+
+(defvar dasm-label-col        0
+  "*The target column for labels.")
+(defvar dasm-instr-col        8
+  "*The target column for instructions.")
+(defvar dasm-instr-col-width  8
+  "*The width of the instruction column.")
+(defvar dasm-instr-if-offset  2
+  "*Amount to indent the instr after an if.")
 
 ;; I like "nil"; "t" is more correct
 (defvar dasm-indent-instr-line-keep-point t
   "*Keep the point when indenting.")
 
-(defvar dasm-output-bufname " *dasm assemble*")
+(defvar dasm-mode-hooks nil
+  "Hook run when entering `dasm-mode'.")
 
-(defvar dasm-mode-hooks
-  nil)
+(defvar dasm-mode-load-hooks nil
+  "Hook run when loading `dasm-mode'.")
 
-(defvar dasm-label-col        0)
-(defvar dasm-instr-col        8)
-(defvar dasm-instr-col-width  8)
-(defvar dasm-instr-if-offset  2)
+(defvar dasm-output-bufname " *dasm assemble*"
+  "The buffer name to use for dasm assembly output.")
 
 ;;;;;
 
@@ -41,7 +53,8 @@
 
 ;; (dcpu:gen-instr-if-lst)
 (defvar dasm-instr-if-lst
-  '("ifb" "ifc" "ife" "ifg" "ifl" "ifn" "ifu"))
+  '("ifb" "ifc" "ife" "ifg" "ifl" "ifn" "ifu")
+  "List of dasm 'if' instructions.")
 
 ;; (dcpu:gen-instr-lst)
 (defvar dasm-instr-op-lst
@@ -50,29 +63,35 @@
     "hwi" "hwn" "hwq" "iag" "iaq" "ias" "ifa" "ifb"
     "ifc" "ife" "ifg" "ifl" "ifn" "ifu" "int" "jsr"
     "mdi" "mli" "mod" "mul" "rfi" "sbx" "set" "shl"
-    "shr" "std" "sti" "sub" "xor")
+    "shr" "std" "sti" "sub" "xor"
     ;; pseudo-instrs
     "dat" "word"
     ;; extensions
     "break"
     "print"
     ;; dcpu keyboard reading. (nonstandard)
-    "getc"))
+    "getc")
+  "List of dasm instructions, not including 'if's.")
 
 (defvar dasm-instr-lst
-  (append dasm-instr-if-lst dasm-instr-op-lst))
+  (append dasm-instr-if-lst dasm-instr-op-lst)
+  "List of dasm instructions (normal and ifs).")
 
 (defvar dasm-instr-start-regexp
-  (concat "^[ \t]*" (regexp-opt dasm-instr-lst)))
+  (concat "^[ \t]*" (regexp-opt dasm-instr-lst))
+  "Regexp which matches the start of an instruction line.")
 
 (defvar dasm-instr-if-start-regexp
-  (concat "^[ \t]*" (regexp-opt dasm-instr-if-lst)))
+  (concat "^[ \t]*" (regexp-opt dasm-instr-if-lst))
+  "Regexp which matches the start of an 'if' line.")
 
 (defvar dasm-label-regexp
-  ":[a-z0-9_.]+")
+  ":[a-z0-9_.]+"
+  "Regexp which matches a label.")
 
 (defvar dasm-label-start-regexp
-  (concat "^[ \t]*" dasm-label-regexp))
+  (concat "^[ \t]*" dasm-label-regexp)
+  "Regexp which matches the start of a label line.")
 
 ;; @todo make our own faces
 (defvar dasm-font-lock-keywords
@@ -93,10 +112,11 @@
      )
     t ;; keywords-only
     t ;; case fold (@todo: case in regexp?
-    ))
+    )
+  "Expressions to higlight in `dasm-mode'.")
 
 (defvar dasm-mode-map
-  (let ((map (make-sparse-keymap)))
+  (let ((map (make-sparse-keymap "Dasm Mode")))
     (define-key map "\C-j"     'newline-and-indent)
     (define-key map "\C-c\C-c" 'dasm-assemble-and-run)
     ;;
@@ -107,14 +127,17 @@
     (define-key map [27 up]    'dasm-prev-label)
     ;; (define-key map "C-cB" 'dasm-toggle-breakpoint)
     ;; (define-key map "C-cB" 'dasm-toggle-breakpoint)
-    map))
+    map)
+  "Keymap used in `dasm-mode' buffers.")
 
-(defvar dasm-asm-program "./dcpu16.git/a16")
+(defvar dasm-asm-program "./dcpu16.git/a16"
+  "*Program which is used for assembly.")
 
 (defvar dasm-mode-syntax-table
   (let ((dasm-mode-syntax-table (make-syntax-table)))
     (modify-syntax-entry ?_ "w" dasm-mode-syntax-table)
-    dasm-mode-syntax-table))
+    dasm-mode-syntax-table)
+  "Syntax for `dasm-mode'.")
 
 ;;;###autoload
 (defun dasm-mode ()
@@ -139,7 +162,8 @@
 
 ;;;###autoload
 (defun dasm-assemble-file (filename &optional out-file)
-  (or out-file (setq out-file (concat filename ".hex ")))
+  "Assemble FILENAME putting the bytes into OUT-FILE."
+(or out-file (setq out-file (concat filename ".hex ")))
   (let ((buf     (get-buffer-create dasm-output-bufname))
         (cmd      (concat
                    dasm-asm-program " "
@@ -156,6 +180,7 @@
 
 ;;;###autoload
 (defun dasm-assemble-and-run ()
+  "Assemble the current buffer and run it in the emulator."
   (interactive)
   (save-buffer)
   ;;
@@ -168,7 +193,7 @@
     (dasm-assemble-file fn)
     (dcpu:load-from-file (concat fn ".hex"))
     (when (not dcpu:display-areg-list)
-      (dcpu:aregionlist-push 
+      (dcpu:aregionlist-push
        'dcpu:display-areg-list
        (dcpu:make-aregion :s 0 :l (* 8 16) :d 'words)))
     ;;
@@ -179,6 +204,10 @@
 ;;;;;
 
 (defun dasm-next-regexp (cnt regexp &optional noerror bound)
+  "Find the next CNT REGEX.
+NOERROR
+BOUND.
+Argument REGEXP ."
   (let ((case-fold-search t))
     (prog1
         (cond
@@ -197,39 +226,55 @@
 ;;;;;
 
 (defun dasm-next-label (&optional cnt noerror)
+  "Find the next label.
+CNT for the nth label.
+NOERROR non-nil for no error."
   (interactive "p")
   (dasm-next-regexp cnt dasm-label-start-regexp noerror))
 
 (defun dasm-prev-label (&optional cnt noerror)
+  "Find the next label.
+CNT for the nth label.
+NOERROR non-nil for no error."
   (interactive "p")
   (dasm-next-regexp (- cnt) dasm-label-start-regexp noerror))
 
 (defun dasm-next-instr (&optional cnt noerror)
+  "Find the next label.
+CNT for the nth label.
+NOERROR non-nil for no error."
   (interactive "p")
   (dasm-next-regexp cnt dasm-instr-start-regexp noerror))
 
 (defun dasm-prev-instr (&optional cnt noerror)
+  "Find the next label.
+CNT for the nth label.
+NOERROR non-nil for no error."
   (interactive "p")
   (dasm-next-regexp (- cnt) dasm-instr-start-regexp noerror))
 
 ;;;;;
 
 (defun dasm-line-commentp()
+  "True if this line is a comment."
   (save-excursion
     (beginning-of-line)
     (looking-at (concat "[ \t]*;"))))
 
 (defun dasm-line-labelp ()
+  "True if this line is a label."
   (save-excursion
     (beginning-of-line)
     (looking-at dasm-label-start-regexp)))
 
 (defun dasm-line-instrp ()
+  "True if this line is an instruction."
   (save-excursion
     (beginning-of-line)
     (looking-at dasm-instr-start-regexp)))
 
 (defun dasm-prev-instr-if-p ()
+  "True if the prev instruction is an 'if'."
   (save-excursion
     (beginning-of-line)
     (and
@@ -239,6 +284,8 @@
 ;;;;;
 
 (defun dasm-adj-whitespace (adj)
+  "Adjust the whitespace on the line.
+Argument ADJ ."
   (cond
    ((< 0 adj)
     (insert (make-string adj ? )))
@@ -248,6 +295,7 @@
 ;; (dasm-adj-whitespace -10)
 
 (defun dasm-space-to-column (targ)
+  "Insert spaces until we get to column TARG."
   (skip-chars-forward " \t")
   (let ((more (- targ (current-column))))
     (if (< 0 more)
@@ -255,8 +303,11 @@
 ;; (dasm-space-to-column 10)
 ;; (dasm-space-to-column 50)
 
-(defvar dasm-compute-instr-indent nil)
+(defvar dasm-compute-instr-indent nil
+  "The value of the the last call to dasm-compute-instr-indent.")
+
 (defun dasm-compute-instr-indent ()
+  "Compute the indentation level of this instruction."
   (let ((col dasm-instr-col))
     (save-excursion
       (beginning-of-line)
@@ -273,7 +324,7 @@
     (setq dasm-compute-instr-indent col)))
 
 (defun dasm-indent-instr-line ()
-  "Intent the line as an instr wo preserving point"
+  "Intent the line as an instr wo preserving point."
   (let ((col (dasm-compute-instr-indent)))
     (save-excursion
       (beginning-of-line)
@@ -289,6 +340,7 @@
 
 ;; dasm-indent-line cant be too magic - indent-buffer uses it
 (defun dasm-indent-line ()
+  "Indent the current line.  (Non magicly.)."
   (interactive)
   (cond
    ;; toggle between bol and the prior line
@@ -303,12 +355,14 @@
   nil)
 
 (defun dasm-open-line ()
+  "Open a line for editing."
   (interactive)
   (end-of-line)
   (insert "\n")
   (dasm-space-to-column (dasm-compute-instr-indent)))
 
 (defun dasm-electric-tab ()
+  "Magicly do-what-i-mean with the tab key."
   (interactive)
   (let ((p-start (point-marker))
         (dasm-compute-instr-indent nil))
@@ -338,6 +392,7 @@
      )))
 
 (defun dasm-electric-ret ()
+  "Magicly do-what-i-mean with the return key."
   (interactive)
   (let ((dasm-indent-instr-line-keep-point nil))
     (dasm-indent-line)
@@ -345,5 +400,10 @@
     (insert "\n")
     (dasm-indent-line)))
 
+;;
+(run-hooks dasm-mode-load-hooks)
+
 ;; (eval-buffer)
 (provide 'dasm-mode)
+
+;;; dasm-mode.el ends here
