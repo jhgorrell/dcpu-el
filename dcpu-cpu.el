@@ -1,7 +1,7 @@
 ;;
 ;; ~/projects/games/0x10c/dcpu-el/dcpu-cpu.el ---
 ;;
-;; $Id: dcpu-cpu.el,v 1.31 2012/05/08 23:04:29 harley Exp $
+;; $Id: dcpu-cpu.el,v 1.32 2012/05/13 01:53:04 harley Exp $
 ;;
 
 (eval-when-compile
@@ -101,7 +101,7 @@
 
 (defun dcpu:post-interrupt (msg)
   (interactive "ndcpu:interrupt: ")
-  (dcpu:queue-push msg dcpu:ia-queue))
+  (dcpu:queue-append msg dcpu:ia-queue))
 ;; (progn (dcpu:init-cpu) (dcpu:post-interrupt 0))
 
 ;;;;;
